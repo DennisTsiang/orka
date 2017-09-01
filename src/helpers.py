@@ -3,6 +3,82 @@
 import subprocess
 import matplotlib.pyplot as plt
 import numpy as np
+import time
+import re
+
+from routine import Routine
+from const import *
+
+def _logcatDateTimeToEpoch(date, tim):
+
+    # split date and miliseconds
+    tim, ms = tim.split('.')
+
+    # build date-time
+    year = str(time.gmtime().tm_year)
+    date_time = '{}-{} {}'.format(year, date, tim)
+
+    # parse pattern
+    pattern = '%Y-%m-%d %H:%M:%S'
+    t = time.strptime(date_time, pattern)
+    epoch = time.mktime(t) + float(ms) * 0.001
+    return epoch
+
+def sanitise(name):
+    """Format string."""
+    sanitised = name.replace("/",".")
+    sanitised = re.sub(r'\s+', '',sanitised).strip()
+    return sanitised
+
+def parseLogcatEntry(logcat):
+    line = logcat.readline().strip()
+    if not line:
+        return None
+    elif line.startswith('-'):
+        return parseLogcatEntry(logcat)
+
+    split = line.split()
+    entry = {}
+    entry['time'] = _logcatDateTimeToEpoch(date = split[0], tim = split[1])
+    entry['tid'] = split[3]
+    entry['methodName'] = sanitise(split[-1])
+
+    if line.find(' entering ') >= 0:
+        entry['type'] = LogcatEntryType.ENTER
+    elif line.find(' invoking ') >= 0:
+        entry['type'] = LogcatEntryType.INVOKE
+    elif line.find(' API call ') >= 0:
+        entry['type'] = LogcatEntryType.API_CALL
+    elif line.find(' exiting ') >= 0:
+        entry['type'] = LogcatEntryType.EXIT
+    return entry
+
+def addToStack(stack, tid, item):
+    """Add item to stack corresponding to given tid."""
+    if not stack.has_key(tid):
+            #if not in dictionary, add method
+            stack[tid] = []
+    stack[tid].append(item)
+
+def popFromStack(stack, tid, expItem, fileName = "unknown",
+    lineCount = "unknown"):
+
+    poppedItem = stack[tid].pop()
+    if poppedItem != expItem:
+        stack[tid].append(poppedItem)
+        msg = 'Issue in the execution trace.\nFile: {}\nStack exiting: {}\n'
+        msg += 'Logcat exiting: {}\nLine: {}\nStack: {}\n'
+        msg = msg.format(fileName, poppedItem,  expItem, lineCount, str(stack))
+        raise RuntimeError(msg)
+
+def addRoutineCall(routineDicts, routine_name):
+    """Add routine call to given api dict."""
+    for routineDict in routineDicts:
+        if not routineDict.has_key(routine_name):
+            #if not in dictionary, add method
+            routineDict[routine_name] = Routine(routine_name)
+
+        routineDict[routine_name].addCall()
 
 def runProcess(cmd, getStdout = False):
     """Run given shell command in a new subprocess.

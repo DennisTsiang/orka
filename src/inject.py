@@ -112,7 +112,6 @@ def _jumpToInjectedMethod(source, output, injectedMethods, className):
         strip = line.strip()
         # if method declaration and not constructor and has API return True
         if strip.startswith('.method') \
-            and not strip.startswith('.method public constructor <init>()V') \
             and _getNameFromSig(strip, className) in injectedMethods:
             return True
 
@@ -306,8 +305,7 @@ def _scanFile(path, methodsToInject):
 
             line = line.strip()
             # if line declaration and not constructor and has API
-            if line.startswith('.method') \
-                and not line.startswith('.method public constructor <init>()V'):
+            if line.startswith('.method'):
                 methodName = _getNameFromSig(line, className)
 
                 if _hasApis(source):

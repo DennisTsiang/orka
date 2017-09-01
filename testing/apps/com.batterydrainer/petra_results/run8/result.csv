@@ -1,0 +1,9 @@
+signature, joule, seconds
+.com.batterydrainer.BatteryDrainerActivity$3.onClick (Landroid/view/View;)V	BatteryDrainerActivity.java,0.5837159416409005,0.6062607099999955
+.com.batterydrainer.BatteryDrainerActivity$2.onProviderDisabled (Ljava/lang/String;)V	BatteryDrainerActivity.java,0.5844660360042732,0.6070234159999963
+.com.batterydrainer.BatteryDrainerActivity$4.onClick (Landroid/view/View;)V	BatteryDrainerActivity.java,1.339294388917712,1.374542999999998
+.com.batterydrainer.BatteryDrainerActivity$3.onClick (Landroid/view/View;)V	BatteryDrainerActivity.java,1.607950342880817,1.647715973999996
+.com.batterydrainer.BatteryDrainerActivity$4.onClick (Landroid/view/View;)V	BatteryDrainerActivity.java,2.3468014810970645,2.3989897119999943
+.com.batterydrainer.BatteryDrainerActivity$3.onClick (Landroid/view/View;)V	BatteryDrainerActivity.java,2.633955895051537,2.690972167999998
+.com.batterydrainer.BatteryDrainerActivity$4.onClick (Landroid/view/View;)V	BatteryDrainerActivity.java,3.387721557406491,3.4574111939999956
+.com.batterydrainer.BatteryDrainerActivity$3.onClick (Landroid/view/View;)V	BatteryDrainerActivity.java,3.680104108597948,3.7547096899999945

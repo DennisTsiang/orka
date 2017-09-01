@@ -1,0 +1,63 @@
+TOUCH|{'x':727,'y':1242,'type':'downAndUp',}
+WAIT|{'seconds':1.0,}
+TOUCH|{'x':132,'y':1088,'type':'downAndUp',}
+WAIT|{'seconds':1.0,}
+TOUCH|{'x':112,'y':269,'type':'downAndUp',}
+TYPE|{'message':'We ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'are ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'uncovering ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'better ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'ways ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'of ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'developing ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'software ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'by ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'doing' ,}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'and ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'helping ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'others ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'do ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'it ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'Through ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'this ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'work ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'we ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'have ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'come ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'to ',}
+WAIT|{'seconds':1.0,}
+TYPE|{'message':'value ',}
+WAIT|{'seconds':1.0,}
+TOUCH|{'x':729,'y':1117,'type':'downAndUp',}
+WAIT|{'seconds':1.0,}
+TOUCH|{'x':724,'y':1240,'type':'downAndUp',}
+WAIT|{'seconds':1.0,}
+TOUCH|{'x':196,'y':946,'type':'downAndUp',}
+WAIT|{'seconds':1.0,}
+TOUCH|{'x':369,'y':224,'type':'downAndUp',}
+WAIT|{'seconds':1.0,}
+TOUCH|{'x':736,'y':1234,'type':'downAndUp',}
+WAIT|{'seconds':1.0,}
+TOUCH|{'x':619,'y':917,'type':'downAndUp',}
+WAIT|{'seconds':1.0,}

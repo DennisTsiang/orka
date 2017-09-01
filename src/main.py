@@ -35,6 +35,9 @@ parser.add_argument('--skip-inj', dest='skipInjection', action='store_const',
 parser.add_argument('--skip-simul', dest='skipSimul', action='store_const',
                     const=True, default=False,
                     help='use this option to skip the simulation phase')
+parser.add_argument('--skip-analysis', dest='skipAn', action='store_const',
+                    const=True, default=False,
+                    help='use this option to skip the analysis phase')
 parser.add_argument('--batch', dest='batchMode', action='store_const',
                     const=True, default=False,
                     help='use this option to proccess each run independently')
@@ -77,13 +80,10 @@ def getPackageInfo(app):
     cmd += " | grep -oP \"(?<=launchable-activity: name=')\S+\""
 
     out = runProcess(cmd, getStdout = True)
-    out = out[:-2]
-
-    tmp = out.split(".")
-    actName = tmp[-1]
+    actName = out[:-2]
 
     # Build componentName
-    compName = packName + '/.' + actName
+    compName = packName + '/' + actName
 
     return packName, packDir, compName
 
@@ -109,9 +109,9 @@ def _loadAPIcosts(path):
         f.close()
     return costs
 
-def _injector(app, packName, packDir):
+def _instrument(app, packName, packDir):
     """Generate an injected, signed APK file from an initial APK."""
-    cmd = [ORKAHOME + "/src/injector.sh", app, packName, packDir]
+    cmd = [ORKAHOME + "/src/instrument.sh", app, packName, packDir]
     cmd = ' '.join(cmd)
     runProcess(cmd)
 
@@ -120,7 +120,7 @@ def _injector(app, packName, packDir):
 def _runSimulation(pathOrkaApk, packName, compName, avd, monkey, monkeyInput,
     nRuns):
     """Run a monkeyrunner script on an injected apk."""
-    cmd = [ORKAHOME + "/src/runEmulation.sh ", pathOrkaApk, packName, compName,
+    cmd = [ORKAHOME + "/src/simulationMaster.sh ", pathOrkaApk, packName, compName,
         avd, monkey, monkeyInput, nRuns]
 
     cmd = ' '.join(cmd)
@@ -141,14 +141,14 @@ def _analyseResults(emul, packName, apiCosts):
     APIAnalyser.analyseAPIData(resultsDir, apiCosts, ax1)
     hardwareAnalyser.analyseHardwareData(resultsDir, appUid, ax2)
 
-def main(skipInjection = False, skipSimul = False, batchMode = False):
+def main(args):
     """Run Orka using provided configuration."""
     # load api costs
     apiCosts = _loadAPIcosts(pathApiCosts)
 
     # parse the configuration file
     emul, apps, monkey, monkeyInputs, nRuns = config.parseConfig(pathConf,
-        batchMode)
+        args.batchMode)
 
     for app, monkeyInput in zip(apps, monkeyInputs):
         #get package name and directory
@@ -157,24 +157,24 @@ def main(skipInjection = False, skipSimul = False, batchMode = False):
         pathOrkaApk = outputDir + "/dist/orka.apk"
 
         # inject logging into app
-        if not (skipInjection and os.path.exists(pathOrkaApk)):
-            _injector(app, outputDir, packDir)
+        if not (args.skipInjection and os.path.exists(pathOrkaApk)):
+            _instrument(app, outputDir, packDir)
 
-        resultsDir = "{}/results_{}/{}/run_1".format(ORKAHOME, emul, packName)
+        resultsDir = "{}/results_{}/{}/run1".format(ORKAHOME, emul, packName)
         logcat = resultsDir + '/logcat.txt'
         batterystats = resultsDir + '/batterystats.txt'
 
         # simulate user interactions
-        if not (skipSimul and os.path.exists(logcat) \
+        if not (args.skipSimul and os.path.exists(logcat) \
             and os.path.exists(batterystats)):
             _runSimulation(pathOrkaApk, packName, compName, emul, monkey,
                 monkeyInput, nRuns)
 
         # render results
-        _analyseResults(emul, packName, apiCosts)
-
-    plt.show()
+        if not args.skipAn:
+            _analyseResults(emul, packName, apiCosts)
+            plt.show()
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    main(args.skipInjection, args.skipSimul, args.batchMode)
+    main(args)

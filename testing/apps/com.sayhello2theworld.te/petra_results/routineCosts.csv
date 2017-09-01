@@ -1,0 +1,20 @@
+Signature,Joule
+ActivityExpress.onResume ()V	ActivityExpress.java,0.20501254830131493
+ActivityExpress.update ()V	ActivityExpress.java,0.20501065137087765
+TasksAdapter.readTasks ()V	ActivityExpress.java,0.20501048287322016
+ActivityExpress.onDestroy ()V	ActivityExpress.java,0.2023673805798821
+TasksAdapter.deleteAdapter ()V	ActivityExpress.java,0.20236349965290698
+ActivityExpress.onPause ()V	ActivityExpress.java,0.2003639869607993
+TaskInfo.reset (Landroid/content/Context;)V	ActivityExpress.java,0.1812663866471896
+ActivityExpressNotification.update ()V	ActivityExpressNotification.java,0.18057906379019542
+ActivityExpressNotification.showNotification (Ljava/lang/String;)V	ActivityExpressNotification.java,0.18057571880308418
+TasksAdapter.getAdapter (Landroid/content/Context;)LTasksAdapter;	ActivityExpress.java,0.14635585922529076
+ActivityExpressNotification.getInstance (Landroid/content/Context;)LActivityExpressNotification;	ActivityExpressNotification.java,0.13911259556182282
+Hints.getHint ()LHint;	Hints.java,0.1389407287589654
+ActivityExpress.onCreate (Landroid/os/Bundle;)V	ActivityExpress.java,0.13790929196606289
+ActivityExpress$1.<init> (LActivityExpress;)V	ActivityExpress.java,0.13748957400176082
+TasksAdapter.getActivityManager ()Landroid/app/ActivityManager;	ActivityExpress.java,0.1371326210116579
+TasksAdapter.getPackageManager ()Landroid/content/pm/PackageManager;	ActivityExpress.java,0.13713218039119793
+TaskInfo.setPackageManager (Landroid/content/pm/PackageManager;)V	ActivityExpress.java,0.1371258428497906
+TasksAdapter.<init> (Landroid/content/Context;)V	ActivityExpress.java,0.11145253439774416
+ActivityExpress.<init> ()V	ActivityExpress.java,0.10866751983051932

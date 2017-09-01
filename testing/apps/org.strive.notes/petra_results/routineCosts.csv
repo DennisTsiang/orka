@@ -1,0 +1,22 @@
+Signature,Joule
+NoteEditor$LinedTextView.onDraw (Landroid/graphics/Canvas;)V	NoteEditor.java,0.2632006369571901
+NotesList$NotesCursorAdapter.bindView (Landroid/view/View;Landroid/content/Context;Landroid/database/Cursor;)V	NotesList.java,0.2289857762241505
+NotesList.access$1 (LNotesList;)Z	NotesList.java,0.22802751193029364
+NotesList.access$0 (LNotesList;Z)V	NotesList.java,0.22802633727902127
+NoteEditor$LinedEditText.onDraw (Landroid/graphics/Canvas;)V	NoteEditor.java,0.22123511121545314
+NoteEditor.onResume ()V	NoteEditor.java,0.18820550359812488
+NoteEditor$1.afterTextChanged (Landroid/text/Editable;)V	NoteEditor.java,0.17871019025429763
+NoteEditor.access$0 (LNoteEditor;)Landroid/widget/EditText;	NoteEditor.java,0.17861372727268843
+NoteEditor$1.onTextChanged (Ljava/lang/CharSequence;III)V	NoteEditor.java,0.17834246804987725
+NoteEditor$1.beforeTextChanged (Ljava/lang/CharSequence;III)V	NoteEditor.java,0.17791152357928866
+NoteEditor.onCreate (Landroid/os/Bundle;)V	NoteEditor.java,0.17743424115590173
+NoteEditor$1.<init> (LNoteEditor;)V	NoteEditor.java,0.17742448512227732
+NotePadProvider.query (Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)Landroid/database/Cursor;	NotePadProvider.java,0.17710681890320684
+NoteEditor$LinedEditText.<init> (Landroid/content/Context;Landroid/util/AttributeSet;)V	NoteEditor.java,0.047316998738051674
+NoteEditor$LinedTextView.<init> (Landroid/content/Context;Landroid/util/AttributeSet;)V	NoteEditor.java,0.044466715093812045
+NotePadProvider.insert (Landroid/net/Uri;Landroid/content/ContentValues;)Landroid/net/Uri;	NotePadProvider.java,0.03962092902475192
+NoteEditor.<init> ()V	NoteEditor.java,0.037309901662626356
+NoteEditor.<clinit> ()V	NoteEditor.java,0.03724903355758443
+NotesList.onOptionsItemSelected (Landroid/view/MenuItem;)Z	NotesList.java,0.03205100760705444
+NotePadProvider.getType (Landroid/net/Uri;)Ljava/lang/String;	NotePadProvider.java,0.016963815742895842
+NotesList.onCreateOptionsMenu (Landroid/view/Menu;)Z	NotesList.java,0.002081292630409568

@@ -87,7 +87,7 @@ def parseConfig(configFile, batchMode = False):
 
         for name in appNames:
             filePrefix = mainDir + name + '/' + name
-            apps.append(filePrefix + '.apk')
+            apps.append(filePrefix + '_debug.apk')
             monkeyInputs.append(filePrefix + '.txt')
 
         return emul, apps, monkey, monkeyInputs, nRuns

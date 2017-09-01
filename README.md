@@ -1,5 +1,3 @@
-Please send feedback an bug reports to ajc515 (at) ic (dot) ac (dot) uk
-
 ## Synopsis
 * Orka is a light-weigth energy profiling tool for Android applications, providing method and source-line level feeback to developpers about the energy usage of their code.
 * Orka first injects the tested application and simulates a typical use case by running a monkeyrunner script provided by the user.

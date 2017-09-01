@@ -3,9 +3,10 @@
 from __future__ import with_statement
 import re
 import os
+import glob
+
 from routine import Routine
 import helpers
-import glob
 
 def _sanitise(name):
     """Format string."""
@@ -64,7 +65,7 @@ def _parseData(logcat, apiDataAggregated):
         for line in log:
             lineCount += 1
             name = _sanitise(line.split(' ')[-1])
-            tid = line[line.find(':') + 1: line.find(')')].strip()
+            tid = line.split()[3].strip()
             lineNumber = line.split()[-2][1:]
 
             #then one of the inserted logs
@@ -75,7 +76,8 @@ def _parseData(logcat, apiDataAggregated):
                 _addToStack(routineStack, tid, routine_name)
 
                 if len(routineStack[tid]) > 1 and \
-                    len(routineStack[tid]) - len(lineStack[tid]) > 1:
+                    (tid not in lineStack.keys() or \
+                        len(routineStack[tid]) - len(lineStack[tid]) > 1):
                     _addToStack(lineStack, tid, -1)
 
             elif line.find(' invoking ') >= 0:
@@ -95,10 +97,10 @@ def _parseData(logcat, apiDataAggregated):
                     lineStack[tid].pop()
                 expectedName = routineStack[tid].pop()
                 if name != expectedName:
-                    msg = 'Issue in the execution trace. Stack: {}, exiting: {}'
-                    msg += ', expected: {}, pos: {}'
-                    msg = msg.format(str(routineStack), name, expectedName,
-                        lineCount)
+                    msg = 'Issue in the execution trace.\nFile: {}\nStack: {}\n'
+                    msg += 'Exiting: {}\nExpected: {}\nLine: {}'
+                    msg = msg.format(logcat, str(routineStack), name,
+                        expectedName, lineCount)
                     raise RuntimeError(msg)
                 if len(routineStack[tid]) > 0:
                     routine_name = routineStack[tid][-1]
@@ -123,7 +125,7 @@ def _processData(apiData, apiCosts, outPutDir, ax = None):
     # build API Costs and get routine cost
     for routine in apiData.values():
         routine.buildApiCosts(apiCosts)
-        routineCosts.append((routine.name, routine.getAverageCost()))
+        routineCosts.append((routine.name, routine._getTotalCost()))
 
     # sort routine costs
     routineCosts.sort(key=lambda x: x[1], reverse=True)
@@ -157,7 +159,7 @@ def _processData(apiData, apiCosts, outPutDir, ax = None):
 
 def analyseAPIData(resultsDir, apiCosts, ax):
     """
-    Analyse the logcat API data.
+    Parse and process the logcat API data.
 
     Keyword arguments:
     resultsDir -- directory to process
@@ -179,7 +181,7 @@ def analyseAPIData(resultsDir, apiCosts, ax):
         nRuns += 1
 
     # normalize data
-    for routine in apiData.values():
+    for routine in apiDataAggregated.values():
         routine.normalize(nRuns)
 
     # generate output

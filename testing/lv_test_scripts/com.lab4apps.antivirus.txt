@@ -1,0 +1,15 @@
+WAIT|{'seconds':2.0,}
+DRAG|{'start':(307,947),'end':(307,189),'duration':1.0,'steps':10,}
+WAIT|{'seconds':1.0,}
+DRAG|{'start':(307,947),'end':(307,189),'duration':1.0,'steps':10,}
+WAIT|{'seconds':1.0,}
+DRAG|{'start':(307,947),'end':(307,189),'duration':1.0,'steps':10,}
+WAIT|{'seconds':1.0,}
+DRAG|{'start':(307,947),'end':(307,189),'duration':1.0,'steps':10,}
+WAIT|{'seconds':1.0,}
+DRAG|{'start':(307,947),'end':(307,189),'duration':1.0,'steps':10,}
+WAIT|{'seconds':1.0,}
+TOUCH|{'x':201,'y':1104,'type':'downAndUp',}
+WAIT|{'seconds':2.0,}
+TOUCH|{'x':381,'y':717,'type':'downAndUp',}
+WAIT|{'seconds':30.0,}

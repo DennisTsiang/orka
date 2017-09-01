@@ -1,4 +1,5 @@
 """Contain the Routine class."""
+from const import HwState
 
 class Routine(object):
     """
@@ -21,6 +22,8 @@ class Routine(object):
         self.apiCalls = {}
         self.apiCosts = {}
         self.subroutines = {}
+
+        self.wifiTime = {HwState.IDLE: .0, HwState.TAIL: .0, HwState.ACTIVE: .0}
 
     def addCall(self):
         """Add a call to current instance."""
@@ -56,6 +59,12 @@ class Routine(object):
         """
         self.subroutines[lineNumber] = subroutine
 
+    def incrementTime(self, wifiState, time):
+        if wifiState in self.wifiTime.keys():
+            self.wifiTime[wifiState] += time
+        else:
+            raise RuntimeError()
+
     def toJson(self):
         """Create a JSON object from the current instance."""
         objDict = {}
@@ -64,6 +73,7 @@ class Routine(object):
         objDict['apiCalls'] = self.apiCalls
         objDict['apiCosts'] = self.apiCosts
         objDict['subroutines'] = self.subroutines
+        objDict['time'] = self.wifiTime
 
         return objDict
 
@@ -126,8 +136,9 @@ class Routine(object):
         # Compute the relative cost of each line in percent
         relativeCosts = self.apiCosts.copy()
         totalCost = self._getTotalCost()
-        for line in relativeCosts.keys():
-            relativeCosts[line] *= 100.0 / totalCost
+        if totalCost > 0:
+            for line in relativeCosts.keys():
+                relativeCosts[line] *= 100.0 / totalCost
 
         # iterate over each line
         lines = self.apiCosts.keys()
@@ -151,3 +162,14 @@ class Routine(object):
 
         out = ''.join(output)
         return out
+
+    def getWifiStateRatio(self):
+        return self.wifiTime
+        totalTime = .0
+        for t in self.wifiTime.values():
+            totalTime += t
+        ratios = {}
+        for state in self.wifiTime:
+            ratios[state] = self.wifiTime[state] / totalTime
+        return ratios
+
