@@ -88,7 +88,7 @@ def runProcess(cmd, getStdout = False):
     getStdout -- if True, the function returns the stdout pipe of the subprocess
         (default False)
     """
-    print "Running process " + cmd
+    print ("Running process " + cmd)
 
     if not (isinstance(cmd, unicode) or isinstance(cmd, str)):
         raise AttributeError('invalid command supplied as parameter')

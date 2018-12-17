@@ -15,7 +15,7 @@ def _addCost(costDict, component, cost):
     component -- name of the component
     cost -- cost to be added
     """
-    if costDict.has_key(component):
+    if component in costDict:
         costDict[component] += cost
     else:
         costDict[component] = cost
@@ -32,6 +32,7 @@ def _parseData(batterystats, hardwareDataAggregated, appUid):
         over all runs
     appUid -- uid of tested application
     """
+    print ("batterystats file: %s, hardwareDataAggregated: %s, appUid: %s" % (batterystats, hardwareDataAggregated, appUid))
     hardwareData = {}
     with open(batterystats,'r') as source:
         # consume file until section "Estimated power use"
@@ -58,9 +59,15 @@ def _parseData(batterystats, hardwareDataAggregated, appUid):
             # add cost
             else:
                 words = line.split(':')
+                cost = 0
                 if line.startswith('Uid '):
                     words[0] = 'CPU'
-                cost = float(words[1].replace(',', '.'))
+                    floatRegex = r"cpu=(\d+\.\d+)"
+                    matches = re.search(floatRegex, line)
+                    cost = float(matches.group(1))
+                else:
+                    values = words[1].split(' ')
+                    cost = float(values[1].replace(',', '.'))
                 _addCost(hardwareData, words[0], cost)
                 _addCost(hardwareDataAggregated, words[0], cost)
 

@@ -92,6 +92,7 @@ for i in `seq 1 $NRUNS`;
         NETSTATS_PID=$!
 
         # reset battery stats and disable usb charging
+        $ADB shell dumpsys batterystats --reset
         $ADB shell dumpsys battery set usb 1
         $ADB shell dumpsys battery set usb 0
         sleep 1
@@ -107,7 +108,7 @@ for i in `seq 1 $NRUNS`;
         kill $NETSTATS_PID
 
         # dump battery stats
-        $ADB shell dumpsys batterystats --unplugged > $BATTERYSTATS
+        $ADB shell dumpsys batterystats > $BATTERYSTATS
         # stop app and clear app data
         $ADB shell pm clear $PACKAGE_NAME
     done
