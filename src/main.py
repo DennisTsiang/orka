@@ -128,7 +128,7 @@ def _runSimulation(pathOrkaApk, packName, compName, avd, monkey, monkeyInput,
 
 def _analyseResults(emul, packName, apiCosts):
     """Generate final results and graphs from raw results."""
-    resultsDir = 'results_{}/{}'.format(emul, packName)
+    resultsDir = ORKAHOME + '/results_{}/{}'.format(emul, packName)
     appUid = _getAppUid(resultsDir + '/appuid')
     rcParams.update({'figure.autolayout': True})
     f, (ax1, ax2) = plt.subplots(1, 2)
