@@ -41,6 +41,12 @@ parser.add_argument('--skip-analysis', dest='skipAn', action='store_const',
 parser.add_argument('--batch', dest='batchMode', action='store_const',
                     const=True, default=False,
                     help='use this option to proccess each run independently')
+parser.add_argument('--app', dest='argApp',
+                    help='use this option to use parameters for app location ' \
+                    'instead of config.ini')
+parser.add_argument('--mr', dest='argMonkey',
+                    help='use this option to use parameters for the ' \
+                    'monkeyrunner script location instead of config.ini')
 
 def getPackageInfo(app):
     """Retrieve package information from an apk."""
@@ -67,6 +73,7 @@ def getPackageInfo(app):
     packName = out[:-2]
 
     # Build package directory
+
     packDir = ''
     tmp = packName.split('.')
 
@@ -149,6 +156,11 @@ def main(args):
     # parse the configuration file
     emul, apps, monkey, monkeyInputs, nRuns = config.parseConfig(pathConf,
         args.batchMode)
+
+    if args.argApp:
+        apps = [args.argApp]
+    if args.argMonkey:
+        monkey = args.argMonkey
 
     for app, monkeyInput in zip(apps, monkeyInputs):
         #get package name and directory
