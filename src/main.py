@@ -160,7 +160,7 @@ def main(args):
     if args.argApp:
         apps = [args.argApp]
     if args.argMonkey:
-        monkey = args.argMonkey
+        monkeyInputs = [args.argMonkey]
 
     for app, monkeyInput in zip(apps, monkeyInputs):
         #get package name and directory
