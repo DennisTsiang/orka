@@ -38,6 +38,9 @@ parser.add_argument('--skip-simul', dest='skipSimul', action='store_const',
 parser.add_argument('--skip-analysis', dest='skipAn', action='store_const',
                     const=True, default=False,
                     help='use this option to skip the analysis phase')
+parser.add_argument('--skip-graph', dest='skipGraph', action='store_const',
+                    const=True, default=False,
+                    help='use this option to skip rendering graph')
 parser.add_argument('--batch', dest='batchMode', action='store_const',
                     const=True, default=False,
                     help='use this option to proccess each run independently')
@@ -71,6 +74,7 @@ def getPackageInfo(app):
 
     out = runProcess(cmd, getStdout = True)
     packName = out[:-2]
+    print("packName: " + packName)
 
     # Build package directory
 
@@ -185,7 +189,8 @@ def main(args):
         # render results
         if not args.skipAn:
             _analyseResults(emul, packName, apiCosts)
-            plt.show()
+            if not args.skipGraph:
+                plt.show()
 
 if __name__ == "__main__":
     args = parser.parse_args()
