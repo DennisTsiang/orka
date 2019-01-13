@@ -18,6 +18,8 @@ Launch monkeyrecorder.
 
 Usage: ./monkey_recorder.py
 The path $ANDROID_HOME/tools/bin needs to be exported.
+Must have the emulator open. This can be launched using the AVD Manager inside
+Android Studio
 """
 
 from com.android.monkeyrunner import MonkeyRunner as mr

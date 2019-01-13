@@ -13,11 +13,9 @@
 
 APK=$1
 PACKAGE_NAME=$2
-COMPONENT_NAME=$3
-AVD=$4
-MONKEY=$5
-MONKEY_INPUT=$6
-NRUNS=$7
+AVD=$3
+SCRIPT_CMD=$4
+NRUNS=$5
 
 PORT=5554
 ADB=$ANDROID_HOME/platform-tools/adb
@@ -98,7 +96,8 @@ for i in `seq 1 $NRUNS`;
         sleep 1
 
         #run monkey script
-        $ANDROID_HOME/tools/bin/monkeyrunner $MONKEY $COMPONENT_NAME $MONKEY_INPUT
+        echo $SCRIPT_CMD
+        $SCRIPT_CMD
 
         # wait for execution to fully terminate
         sleep 5

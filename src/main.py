@@ -50,6 +50,10 @@ parser.add_argument('--app', dest='argApp',
 parser.add_argument('--mr', dest='argMonkey',
                     help='use this option to use parameters for the ' \
                     'monkeyrunner script location instead of config.ini')
+parser.add_argument('--droidmate', dest='droidmate', action='store_const',
+                    const=True, default=False,
+                    help='use this option to run droidmate cmd instead of' \
+                    'monkeyrunner')
 
 def getPackageInfo(app):
     """Retrieve package information from an apk."""
@@ -128,12 +132,11 @@ def _instrument(app, packName, packDir):
 
     return os.path.exists(pathApiFound)
 
-def _runSimulation(pathOrkaApk, packName, compName, avd, monkey, monkeyInput,
+def _runSimulation(pathOrkaApk, packName, avd, scriptCmd,
     nRuns):
-    """Run a monkeyrunner script on an injected apk."""
-    cmd = [ORKAHOME + "/src/simulationMaster.sh ", pathOrkaApk, packName, compName,
-        avd, monkey, monkeyInput, nRuns]
-
+    """Runs a command on an injected apk."""
+    cmd = [ORKAHOME + "/src/simulationMaster.sh ", pathOrkaApk, packName, avd,
+        scriptCmd, nRuns]
     cmd = ' '.join(cmd)
     runProcess(cmd)
 
@@ -183,8 +186,17 @@ def main(args):
         # simulate user interactions
         if not (args.skipSimul and os.path.exists(logcat) \
             and os.path.exists(batterystats)):
-            _runSimulation(pathOrkaApk, packName, compName, emul, monkey,
-                monkeyInput, nRuns)
+            if args.droidmate:
+                scriptCmd = ("java -jar vendor/orka/dependencies/DM-2-mod.jar " +
+                    "--Exploration-apksDir=" +
+                    outputDir + "/dist --Output-outputDir=" + resultsDir
+                    + "/droidmate" + " --Selectors-actionLimit=5")
+            else:
+                scriptCmd = ' '.join([ORKASDK+"/tools/bin/monkeyrunner",
+                    monkey, compName, monkeyInput])
+            scriptCmd = "\'" + scriptCmd + "\'"
+            print ("Running simulation with command: " + scriptCmd)
+            _runSimulation(pathOrkaApk, packName, emul, scriptCmd, nRuns)
 
         # render results
         if not args.skipAn:
