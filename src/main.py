@@ -50,10 +50,10 @@ parser.add_argument('--app', dest='argApp',
 parser.add_argument('--mr', dest='argMonkey',
                     help='use this option to use parameters for the ' \
                     'monkeyrunner script location instead of config.ini')
-parser.add_argument('--droidmate', dest='droidmate', action='store_const',
-                    const=True, default=False,
-                    help='use this option to run droidmate cmd instead of' \
-                    'monkeyrunner')
+parser.add_argument('--method', dest='method',
+                    default="monkeyrunner",
+                    help='use this option to change the testing method ' \
+                    'allowed options are: droidmate, monkeyrunner')
 
 def getPackageInfo(app):
     """Retrieve package information from an apk."""
@@ -186,7 +186,7 @@ def main(args):
         # simulate user interactions
         if not (args.skipSimul and os.path.exists(logcat) \
             and os.path.exists(batterystats)):
-            if args.droidmate:
+            if args.method == "droidmate":
                 scriptCmd = ("java -jar vendor/orka/dependencies/DM-2-mod.jar " +
                     "--Exploration-apksDir=" +
                     outputDir + "/dist --Output-outputDir=" + resultsDir
