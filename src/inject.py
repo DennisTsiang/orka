@@ -4,6 +4,7 @@ from __future__ import with_statement
 import  os,  glob, fnmatch
 import sys
 import re
+import datetime
 
 ORKAHOME = os.environ['ORKA_HOME']
 outputExtension = ".orkatmp"
@@ -161,11 +162,11 @@ def _injectMethodPrologue(source, output):
     """Inject the prologue of current method."""
     remappedParam = False
     parameterMap = {}
-
     while True:
         line = source.readline()
+        if line == '':
+            return newReg, remappedParam, parameterMap
         strip = line.strip()
-
         if strip.startswith('.locals'):
             lineArray = line.split('.locals')
             newReg = int(lineArray[1])
@@ -177,6 +178,11 @@ def _injectMethodPrologue(source, output):
             paramSize = _getParametersTotalSize(param)
 
             remappedParam = _needMoveParam(newReg, paramSize)
+            # if remappedParam:
+                # logfile.write("This line require remapping parameters. locals %d parameters %d\nParameters:" % (newReg, paramSize))
+                # for key, value in sorted(param.iteritems()):
+                    # logfile.write(str(key) + " " + str(value) + ",")
+                # logfile.write("\n")
 
             # compute parameters map
             if remappedParam:
@@ -189,7 +195,7 @@ def _injectMethodPrologue(source, output):
                     else:
                         newReg += 1
 
-        elif strip.startswith('.prologue'):
+        elif strip.startswith('.prologue') or 'droidmate' in strip:
             _addMethodEnterLog(output)
             # move parameters
             if remappedParam:
@@ -220,19 +226,26 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
     apiCalls = [[]]
     exitLogged = False
     lineNumber = "-1"
+    # logfile = open("injectlogfile.txt", "a")
+    # logfile.write("injecting into method body of " + source.name + "\n")
 
     while True:
-        lines = source.readline()
+        line = source.readline()
+        # logfile.write(str(datetime.datetime.now()).split('.')[0] + line+"\n")
+
+        if line == '':
+            # logfile.close()
+            return
 
         # Skip blanklines
-        if not lines.strip():
+        if not line.strip():
             output.write('\n')
             continue
 
         if remappedParam:
-            lines = _remapParameters(lines, parameterMap)
+            line = _remapParameters(line, parameterMap)
 
-        strip = lines.strip()
+        strip = line.strip()
         if strip.startswith(':goto'):
             # if a goto detected, need to start using a different list to store
             # the apis so that only those on that level are logged before goto
@@ -272,13 +285,15 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
                 _addMethodExitLog(output)
                 exitLogged = True
 
-        output.write(lines)
+        output.write(line)
         if strip.startswith('.end method'):
+            # logfile.close()
             return
 
 def _injectFile(path, injectedMethods):
     """Inject a single file."""
     with open(path,'r') as source:
+        print ("Injecting into " + path)
         with open(path + outputExtension, 'w') as output:
             appId, className = _getPackageId(source)
             while _jumpToInjectedMethod(source, output, injectedMethods, className):
@@ -339,6 +354,9 @@ def main(argv):
     filesToInject = set()
     methodsToInject = set()
 
+    # Clear log file
+    # logfile = open("injectlogfile.txt", "w")
+    # logfile.close()
     for path in argv:
         # check there are files to proccess
         files = glob.glob(path)

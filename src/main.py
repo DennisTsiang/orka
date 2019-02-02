@@ -51,7 +51,7 @@ parser.add_argument('--mr', dest='argMonkey',
                     help='use this option to use parameters for the ' \
                     'monkeyrunner script location instead of config.ini')
 parser.add_argument('--method', dest='method',
-                    default="monkeyrunner",
+                    default="Monkeyrunner",
                     help='use this option to change the testing method ' \
                     'allowed options are: droidmate, monkeyrunner')
 
@@ -186,8 +186,8 @@ def main(args):
         # simulate user interactions
         if not (args.skipSimul and os.path.exists(logcat) \
             and os.path.exists(batterystats)):
-            if args.method == "droidmate":
-                scriptCmd = ("java -jar vendor/orka/dependencies/DM-2-mod.jar " +
+            if args.method == "DroidMate-2":
+                scriptCmd = ("java -jar vendor/orka/dependencies/DM-2-mod.jar "+
                     "--Exploration-apksDir=" +
                     outputDir + "/dist --Output-outputDir=" + resultsDir
                     + "/droidmate" + " --Selectors-actionLimit=5")

@@ -83,6 +83,7 @@ for i in `seq 1 $NRUNS`;
         $ADB logcat -c
 
         # start dumping log
+        # only outputs logs with tag orka at priority "info"
         $ADB logcat -v threadtime orka:I *:S > $LOGCAT &
         LOGCAT_PID=$!
         # start monitoring traffic
@@ -95,7 +96,7 @@ for i in `seq 1 $NRUNS`;
         $ADB shell dumpsys battery set usb 0
         sleep 1
 
-        #run monkey script
+        #run script command
         echo $SCRIPT_CMD
         $SCRIPT_CMD
 
