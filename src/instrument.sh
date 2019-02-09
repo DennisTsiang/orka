@@ -13,7 +13,7 @@ APKFILE=$1
 OUTDIR=$2
 PDIR=$3
 
-APKTOOL=$ORKA_HOME/dependencies/apktool_2.2.2.jar
+APKTOOL=$ORKA_HOME/dependencies/apktool_2.3.4.jar
 LOGGER=$ORKA_HOME/dependencies/Logger.smali
 KEYSTORE=$ORKA_HOME/dependencies/debug.keystore
 

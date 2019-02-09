@@ -103,6 +103,7 @@ def _hasApis(source):
 def _jumpToInjectedMethod(source, output, injectedMethods, className):
     """Read file until next method to inject."""
     while True:
+        prevLine = source.tell()
         line = source.readline()
         # EOF
         if not line:
@@ -114,6 +115,7 @@ def _jumpToInjectedMethod(source, output, injectedMethods, className):
         # if method declaration and not constructor and has API return True
         if strip.startswith('.method') \
             and _getNameFromSig(strip, className) in injectedMethods:
+            source.seek(prevLine)
             return True
 
 def _needMoveParam(local, parameters):
@@ -148,6 +150,39 @@ def _getParametersList(fi):
         pType = lineArray[-1][0]
         param[pIndex] = pType
 
+def _getParametersFromMethodSignature(line):
+    param = {}
+    pIndex = 0
+    if 'static' not in line:
+        # Add implicit object parameter
+        param = {0: 'L'}
+        pIndex = 1
+    types = ['Z','B','S','C','I','J','F','D','L']
+    arrayChar = '['
+    regex = r"\((([^;)]+;)*)\)"
+    matches = re.findall(regex,line)
+    parameters = ""
+    if matches is not None and len(matches) > 0:
+        parameters = matches[0][0]
+    strIndex = 0
+    arrayStack = ""
+    while strIndex < len(parameters):
+        if parameters[strIndex] == arrayChar:
+            arrayStack += arrayChar
+        elif parameters[strIndex] in types:
+            if len(arrayStack) > 0:
+                arrayStack += parameters[strIndex]
+                param[pIndex] = arrayStack
+                arrayStack = ""
+            else:
+                param[pIndex] = parameters[strIndex]
+            if parameters[strIndex] == 'L':
+                while parameters[strIndex] != ';':
+                    strIndex += 1
+            pIndex += 1
+        strIndex += 1
+    return param
+
 def _getParametersTotalSize(parameters):
     """Get the total number of parameters from the parameter dict."""
     total = 0
@@ -162,27 +197,39 @@ def _injectMethodPrologue(source, output):
     """Inject the prologue of current method."""
     remappedParam = False
     parameterMap = {}
+    #logfile = open("injectlogfile.txt", "a")
+    #logfile.write("injecting into method prologue of " + source.name + "\n")
+    param = {}
+    paramSize = 0
     while True:
         line = source.readline()
+        #logfile.write(line)
         if line == '':
             return newReg, remappedParam, parameterMap
         strip = line.strip()
-        if strip.startswith('.locals'):
+        if strip.startswith('.method'):
+            param = _getParametersFromMethodSignature(line)
+            paramSize = _getParametersTotalSize(param)
+        elif strip.startswith('.locals'):
             lineArray = line.split('.locals')
             newReg = int(lineArray[1])
 
-            line = lineArray[0] + '.locals ' + str(newReg + 1) + '\n'
-            output.write(line)
-
-            param = _getParametersList(source)
-            paramSize = _getParametersTotalSize(param)
+            # Can't inject line as already has 16 local variables
+            if newReg == 16:
+                output.write(line)
+                continue
 
             remappedParam = _needMoveParam(newReg, paramSize)
             # if remappedParam:
                 # logfile.write("This line require remapping parameters. locals %d parameters %d\nParameters:" % (newReg, paramSize))
+                #print(line)
+                #print("This method require remapping parameters. locals %d parameters %d\n" % (newReg, paramSize))
                 # for key, value in sorted(param.iteritems()):
                     # logfile.write(str(key) + " " + str(value) + ",")
                 # logfile.write("\n")
+
+            line = lineArray[0] + '.locals ' + str(newReg + 1) + '\n'
+            output.write(line)
 
             # compute parameters map
             if remappedParam:
@@ -194,8 +241,14 @@ def _injectMethodPrologue(source, output):
                         newReg += 2
                     else:
                         newReg += 1
-
-        elif strip.startswith('.prologue') or 'droidmate' in strip:
+        elif strip.startswith('.param'):
+            while not strip.startswith('.end param') and strip != "":
+                output.write(line)
+                line = source.readline()
+                strip = line.strip()
+            output.write(line)
+        elif strip.startswith('.prologue') or 'droidmate' in strip or \
+            (not '.param' in strip and not 'invoke-static' in strip):
             _addMethodEnterLog(output)
             # move parameters
             if remappedParam:
@@ -213,7 +266,10 @@ def _injectMethodPrologue(source, output):
                     else:
                         output.write('     move/from16 '\
                             + mapping +', ' + reg +'\n\n')
-            output.write(line)
+            if remappedParam:
+                output.write(_remapParameters(line, parameterMap))
+            else:
+                output.write(line)
             return newReg, remappedParam, parameterMap
 
         else:
@@ -280,10 +336,13 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
 
             if strip.startswith('.line'):
                 lineNumber = strip.split()[-1]
-            elif not exitLogged:
             # if return or end of method, log an exit method message
+            elif strip.startswith('return'):
                 _addMethodExitLog(output)
                 exitLogged = True
+            elif not exitLogged:
+                # for .end method
+                _addMethodExitLog(output)
 
         output.write(line)
         if strip.startswith('.end method'):

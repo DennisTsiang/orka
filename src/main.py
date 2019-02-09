@@ -53,7 +53,7 @@ parser.add_argument('--mr', dest='argMonkey',
 parser.add_argument('--method', dest='method',
                     default="Monkeyrunner",
                     help='use this option to change the testing method ' \
-                    'allowed options are: droidmate, monkeyrunner')
+                    'allowed options are: DroidMate-2, monkeyrunner')
 
 def getPackageInfo(app):
     """Retrieve package information from an apk."""

@@ -41,7 +41,7 @@ DEVICES=$($ADB devices | grep 'device\b')
 # -wipe-data option reset user data on device
 if [ -z $DEVICES ];
     then
-        $ANDROID_HOME/tools/emulator -avd $AVD -port $PORT -wipe-data &
+        $ANDROID_HOME/tools/emulator -avd $AVD -port $PORT -wipe-data -no-boot-anim -no-snapshot-save &
 fi
 
 # wait for the device to boot
@@ -120,7 +120,7 @@ $ADB uninstall $PACKAGE_NAME
 $ADB shell dumpsys battery set usb 1
 
 # kill emulator if it was booted by orka
-if [ -z $DEVICES ];
+if [ -z "$DEVICES" ];
     then
         $ADB emu kill
 fi

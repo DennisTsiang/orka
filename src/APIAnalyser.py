@@ -76,7 +76,7 @@ def _parseData(logcat, apiDataAggregated):
                 _addToStack(routineStack, tid, routine_name)
 
                 if len(routineStack[tid]) > 1 and \
-                    (tid not in lineStack.keys() or \
+                    (tid not in lineStack or \
                         len(routineStack[tid]) - len(lineStack[tid]) > 1):
                     _addToStack(lineStack, tid, -1)
 
@@ -93,7 +93,7 @@ def _parseData(logcat, apiDataAggregated):
                 lineStack[tid].pop()
 
             elif line.find(' exiting ') >= 0:
-                if len(lineStack[tid]) > 0:
+                if tid in lineStack and len(lineStack[tid]) > 0:
                     lineStack[tid].pop()
                 expectedName = routineStack[tid].pop()
                 if name != expectedName:
