@@ -27,22 +27,26 @@ if ! [ -e $APKFILE ]
 fi
 
 # decompile with ApkTool, the -f will clear the $OUTDIR directory
-java -jar $APKTOOL d $APKFILE -o $OUTDIR/ --force
+java -jar $APKTOOL d $APKFILE -o $OUTDIR/ --no-res --force
+
+# Check which smali folder the actual application has been decompiled to
+smali_folder=$(find -wholename "*$PDIR*" |  head -n 1 | cut -d'/' -f6)
+echo "App found in smali folder: $smali_folder"
 
 # add logger smali file
-cp $LOGGER $OUTDIR/smali/$PDIR/Logger.smali
+cp $LOGGER $OUTDIR/$smali_folder/$PDIR/Logger.smali
 
 # inject application
-python $ORKA_HOME/src/inject.py $OUTDIR/smali/$PDIR/
+python $ORKA_HOME/src/inject.py $OUTDIR/$smali_folder/$PDIR/
 
 #check the .smali1 code exists
-if ls "$OUTDIR/smali/$PDIR/*.smali.orkatmp" 1> /dev/null 2>&1;
+if ls "$OUTDIR/$smali_folder/$PDIR/*.smali.orkatmp" 1> /dev/null 2>&1;
     then
         echo "Cannot find the instrumented files please make sure the injector ran correctly"
         exit
 fi
 
-java -jar $APKTOOL empty-framework-dir --force
+# java -jar $APKTOOL empty-framework-dir --force
 # recompile application
 java -jar $APKTOOL b $OUTDIR/ -o $ORKA_APK
 

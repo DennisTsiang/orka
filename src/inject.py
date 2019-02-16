@@ -113,7 +113,8 @@ def _jumpToInjectedMethod(source, output, injectedMethods, className):
 
         strip = line.strip()
         # if method declaration and not constructor and has API return True
-        if strip.startswith('.method') \
+        # and not an abstract method
+        if strip.startswith('.method') and 'abstract' not in strip \
             and _getNameFromSig(strip, className) in injectedMethods:
             source.seek(prevLine)
             return True
@@ -124,11 +125,27 @@ def _needMoveParam(local, parameters):
     # otherwise, adding a local will push a parameter out of 4-bit registers
     return local < 16 and (local + parameters) >= 16
 
+def _outOfRegisterRange(registers, limit):
+    for reg in registers:
+        if int(reg) > limit:
+            return True
+    return False
+
 def _remapParameters(line, pMap):
     """Remap parameters."""
-    strPattern = '|'.join(pMap.keys())
+    strPattern = '(?=[\s,}]|$)|'.join(pMap.keys())
     pattern = re.compile(strPattern)
-    return pattern.sub(lambda x: pMap[x.group()], line)
+    remappedLine = pattern.sub(lambda x: pMap[x.group()], line)
+    # Check if the new remapping included a register higher than v15
+    # and if the line was a move-object line
+    registerPattern = r'v(\d{2})'
+    matches = re.findall(registerPattern, remappedLine)
+    outOfRegisterRange = _outOfRegisterRange(matches, 15)
+    if 'move-object' in remappedLine \
+    and 'move-object/from16' not in remappedLine \
+    and outOfRegisterRange:
+        remappedLine = remappedLine.replace('move-object','move-object/from16',1)
+    return remappedLine
 
 def _getParametersList(fi):
     """Get the method parameters and their type."""
@@ -159,11 +176,11 @@ def _getParametersFromMethodSignature(line):
         pIndex = 1
     types = ['Z','B','S','C','I','J','F','D','L']
     arrayChar = '['
-    regex = r"\((([^;)]+;)*)\)"
+    regex = r"\((.*)\)"
     matches = re.findall(regex,line)
     parameters = ""
     if matches is not None and len(matches) > 0:
-        parameters = matches[0][0]
+        parameters = matches[0]
     strIndex = 0
     arrayStack = ""
     while strIndex < len(parameters):
@@ -197,13 +214,16 @@ def _injectMethodPrologue(source, output):
     """Inject the prologue of current method."""
     remappedParam = False
     parameterMap = {}
-    #logfile = open("injectlogfile.txt", "a")
-    #logfile.write("injecting into method prologue of " + source.name + "\n")
+    # if 'subreddit/header/c.smali' in source.name:
+        # logfile = open("injectlogfile.txt", "a")
+        # logfile.write("injecting into method prologue of " + source.name + "\n")
     param = {}
     paramSize = 0
+    newReg = 0
     while True:
         line = source.readline()
-        #logfile.write(line)
+        # if 'subreddit/header/c.smali' in source.name:
+            # logfile.write(line)
         if line == '':
             return newReg, remappedParam, parameterMap
         strip = line.strip()
@@ -220,12 +240,8 @@ def _injectMethodPrologue(source, output):
                 continue
 
             remappedParam = _needMoveParam(newReg, paramSize)
-            # if remappedParam:
-                # logfile.write("This line require remapping parameters. locals %d parameters %d\nParameters:" % (newReg, paramSize))
-                #print(line)
-                #print("This method require remapping parameters. locals %d parameters %d\n" % (newReg, paramSize))
-                # for key, value in sorted(param.iteritems()):
-                    # logfile.write(str(key) + " " + str(value) + ",")
+            # if remappedParam and 'subreddit/header/c.smali' in source.name:
+                # logfile.write("This line require remapping parameters. locals %d parameters %d\n" % (newReg, paramSize))
                 # logfile.write("\n")
 
             line = lineArray[0] + '.locals ' + str(newReg + 1) + '\n'
@@ -299,7 +315,15 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
             continue
 
         if remappedParam:
+            # if "listing/modqueue/d.smali" in source.name:
+                # print("This line is about to be remapped")
+                # print(line)
+                # print("ParamaterMap")
+                # print(parameterMap)
             line = _remapParameters(line, parameterMap)
+            # if "listing/modqueue/d.smali" in source.name:
+                # print("Line after remapping:")
+                # print(line)
 
         strip = line.strip()
         if strip.startswith(':goto'):
@@ -352,7 +376,7 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
 def _injectFile(path, injectedMethods):
     """Inject a single file."""
     with open(path,'r') as source:
-        print ("Injecting into " + path)
+        # print ("Injecting into " + path)
         with open(path + outputExtension, 'w') as output:
             appId, className = _getPackageId(source)
             while _jumpToInjectedMethod(source, output, injectedMethods, className):
@@ -412,7 +436,6 @@ def main(argv):
     """Inject a set of files."""
     filesToInject = set()
     methodsToInject = set()
-
     # Clear log file
     # logfile = open("injectlogfile.txt", "w")
     # logfile.close()

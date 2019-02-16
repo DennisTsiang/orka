@@ -46,7 +46,8 @@ def _fetchNetworkStats(uid, uid_idx, rx_idx, tx_idx):
         if not line:
             continue
         elif fetch_time < 0:
-            fetch_time = float(line)
+            parts = line.split('\n')
+            fetch_time = float(parts[0])
         else:
             words = line.split()
             if words[uid_idx] == uid:
