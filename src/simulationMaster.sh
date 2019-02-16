@@ -41,7 +41,7 @@ DEVICES=$($ADB devices | grep 'device\b')
 # -wipe-data option reset user data on device
 if [ -z $DEVICES ];
     then
-        $ANDROID_HOME/tools/emulator -avd $AVD -port $PORT -wipe-data -no-boot-anim -no-snapshot-save &
+        $ANDROID_HOME/tools/emulator -avd $AVD -port $PORT -no-boot-anim -no-snapshot-save -snapshot testsong &
 fi
 
 # wait for the device to boot
@@ -61,7 +61,8 @@ $ADB shell pm uninstall $APK
 # install the APK
 $ADB install $APK
 # get app uid
-APPUID=$($ADB shell dumpsys package $PACKAGE_NAME | grep -oP '(?<=userId=)\S+')
+APPUID=$($ADB shell dumpsys package $PACKAGE_NAME | grep -oP '(?<=userId=)\S+' | head -n 1)
+echo "APPUID: $APPUID"
 echo $APPUID > $OUTDIR/appuid
 
 # disable ac charging
@@ -78,6 +79,7 @@ for i in `seq 1 $NRUNS`;
         LOGCAT=$RUNDIR/logcat.txt
         BATTERYSTATS=$RUNDIR/batterystats.txt
         NETSTATS=$RUNDIR/netstats.txt
+        echo "NETSTATS: $NETSTATS"
 
         # reset logcat
         $ADB logcat -c
@@ -86,7 +88,7 @@ for i in `seq 1 $NRUNS`;
         # only outputs logs with tag orka at priority "info"
         $ADB logcat -v threadtime orka:I *:S > $LOGCAT &
         LOGCAT_PID=$!
-        # start monitoring traffic
+        # start monitoring traffic. & makes it run in the background
         python $ORKA_HOME/src/netstatsMonitor.py -o $NETSTATS -i $APPUID &
         NETSTATS_PID=$!
 
