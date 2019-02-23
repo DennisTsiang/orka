@@ -30,7 +30,12 @@ fi
 java -jar $APKTOOL d $APKFILE -o $OUTDIR/ --no-res --force
 
 # Check which smali folder the actual application has been decompiled to
-smali_folder=$(find -wholename "*$PDIR*" 2>/dev/null |  head -n 1 | cut -d'/' -f6)
+echo "OUTDIR: $OUTDIR"
+echo "PDIR: $PDIR"
+smali_folder=$(find -wholename "*$PDIR*" 2>/dev/null |  head -n 1)
+smali_folder=$(cd $smali_folder; pwd)
+smali_folder=${smali_folder#$OUTDIR}
+smali_folder=$(echo $smali_folder | cut -d'/' -f2)
 echo "App found in smali folder: $smali_folder"
 
 # add logger smali file

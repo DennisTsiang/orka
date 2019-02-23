@@ -62,11 +62,9 @@ def _parseData(logcat, apiDataAggregated):
     routineStack = {}
     lineStack = {}
     routine_name = ''
-    lineCount = 0
 
     with open(logcat, 'r') as log:
         for index, line in enumerate(log):
-            lineCount += 1
             name = _sanitise(line.split(' ')[-1])
             tid = line.split()[3].strip()
             lineNumber = line.split()[-2][1:]
@@ -90,6 +88,7 @@ def _parseData(logcat, apiDataAggregated):
                 _addToStack(lineStack, tid, int(lineNumber))
 
             elif line.find(' API call ') >= 0:
+                # print ("Processing API call at line number: %d" % (index+1))
                 _addToStack(lineStack, tid, int(lineNumber))
                 _addAPICall([apiData, apiDataAggregated], routineStack[tid],
                     lineStack[tid], name)
@@ -100,10 +99,10 @@ def _parseData(logcat, apiDataAggregated):
                     lineStack[tid].pop()
                 expectedName = routineStack[tid].pop()
                 if name != expectedName:
-                    msg = 'Issue in the execution trace.\nFile: {}\nStack: {}\n'
+                    msg = 'Issue in the execution trace.\nFile: {}\nRoutine Stack: {}\n'
                     msg += 'Exiting: {}\nExpected: {}\nLine: {}'
                     msg = msg.format(logcat, str(routineStack), name,
-                        expectedName, lineCount)
+                        expectedName, index+1)
                     raise RuntimeError(msg)
                 if len(routineStack[tid]) > 0:
                     routine_name = routineStack[tid][-1]
