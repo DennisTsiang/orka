@@ -32,7 +32,10 @@ def _addSubroutineCall(apiDicts, routine_name, subroutine, lineNumber):
 def _addAPICall(apiDicts, routineStack, lineStack, apiName):
     """Add API call."""
     if len(routineStack) != len(lineStack):
-        raise RuntimeError('Error in call stack')
+        raise RuntimeError(
+            'Error in call stack: Routine stack size neq to line stack size\n' +
+            'Routine stack size: %d\nLine stack size: %d' %
+            (len(routineStack), len(lineStack)))
     for apiData in apiDicts:
         for routine_name, lineNumber in zip(routineStack, lineStack):
             apiData[routine_name].addApi(apiName, lineNumber)
@@ -62,7 +65,7 @@ def _parseData(logcat, apiDataAggregated):
     lineCount = 0
 
     with open(logcat, 'r') as log:
-        for line in log:
+        for index, line in enumerate(log):
             lineCount += 1
             name = _sanitise(line.split(' ')[-1])
             tid = line.split()[3].strip()
@@ -76,8 +79,8 @@ def _parseData(logcat, apiDataAggregated):
                 _addToStack(routineStack, tid, routine_name)
 
                 if len(routineStack[tid]) > 1 and \
-                    (tid not in lineStack or \
-                        len(routineStack[tid]) - len(lineStack[tid]) > 1):
+                (tid not in lineStack or \
+                len(routineStack[tid]) - len(lineStack[tid]) > 1):
                     _addToStack(lineStack, tid, -1)
 
             elif line.find(' invoking ') >= 0:

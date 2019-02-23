@@ -62,9 +62,12 @@ def _parseData(batterystats, hardwareDataAggregated, appUid):
                 cost = 0
                 if line.startswith('Uid '):
                     words[0] = 'CPU'
-                    floatRegex = r"cpu=(\d+\.\d+)"
+                    floatRegex = r": (\d+\.\d+) |cpu=(\d+\.\d+)"
                     matches = re.search(floatRegex, line)
-                    cost = float(matches.group(1))
+                    if matches is None:
+                        print ("Could not find CPU usage from appuid")
+                    else:
+                        cost = float(matches.group(1))
                 else:
                     values = words[1].split(' ')
                     cost = float(values[1].replace(',', '.'))

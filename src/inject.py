@@ -58,14 +58,64 @@ def _getNameFromSig(line, className):
     return methodName
 
 def _getNameFromInvoke(line, namespace = 'Landroid/'):
-    """Get the name of the first API bellonging to a given namespace."""
+    """Get the name of the first API belonging to a given namespace."""
     # start at + 1 because we do not want the preceeding L
     # stops at ( and replace ;-> with /
     start = line.find(namespace) + 1
     end = line.find('(')
     return line[start:end].replace(';->', '/')
 
-def _lineHasInvoke(line, namespace, subset = None):
+def _getParametersFromMethod(line, pIndex, param):
+    types = ['Z','B','S','C','I','J','F','D','L']
+    arrayChar = '['
+    regex = r"\((.*)\)"
+    matches = re.findall(regex,line)
+    parameters = ""
+    if matches is not None and len(matches) > 0:
+        parameters = matches[0]
+    strIndex = 0
+    arrayStack = ""
+    while strIndex < len(parameters):
+        if parameters[strIndex] == arrayChar:
+            arrayStack += arrayChar
+        elif parameters[strIndex] in types:
+            if len(arrayStack) > 0:
+                arrayStack += parameters[strIndex]
+                param[pIndex] = arrayStack
+                arrayStack = ""
+            else:
+                param[pIndex] = parameters[strIndex]
+            if parameters[strIndex] == 'L':
+                while parameters[strIndex] != ';':
+                    strIndex += 1
+            pIndex += 1
+        strIndex += 1
+    return param
+
+def _getParametersFromMethodInvocation(line):
+    param = {}
+    pIndex = 0
+    if 'invoke-virtual' in line:
+        # Add implicit object parameter
+        param = {0: 'L'}
+        pIndex = 1
+    return _getParametersFromMethod(line, pIndex, param)
+
+
+def _doesMethodCallMatchAPIMethodCall(line, methodName, methodsToParameters):
+    """ Check if the signature of the method being invoked in line
+        contains parameters that matches methods we found to have API calls
+        previously. methodsToParameters stores the methods and their parameters
+        that we know have API calls
+    """
+    if methodName not in methodsToParameters:
+        return False
+    invokedParams =_getParametersFromMethodInvocation(line)
+    for params in methodsToParameters[methodName]:
+        if params == invokedParams:
+            return True
+
+def _lineHasInvoke(line, namespace, subset = None, methodsToParameters = None):
     """
     Check whether line contains a method invocation in a given namespace and
         subset.
@@ -81,7 +131,12 @@ def _lineHasInvoke(line, namespace, subset = None):
     elif not subset:
         return True
     else:
-        return _getNameFromInvoke(line, namespace)[len(namespace):] in subset
+        # Need to check the method we're invoking is not an abstract method
+        # Abstract methods will not have any API calls
+        # Needed due to function overloading in Java
+        methodName = _getNameFromInvoke(line, namespace)[len(namespace):]
+        return methodName in subset \
+            and _doesMethodCallMatchAPIMethodCall(line, methodName, methodsToParameters)
 
 def _lineHasApiInvoke(line):
     """Check whether line contains an Android API invocation."""
@@ -174,31 +229,7 @@ def _getParametersFromMethodSignature(line):
         # Add implicit object parameter
         param = {0: 'L'}
         pIndex = 1
-    types = ['Z','B','S','C','I','J','F','D','L']
-    arrayChar = '['
-    regex = r"\((.*)\)"
-    matches = re.findall(regex,line)
-    parameters = ""
-    if matches is not None and len(matches) > 0:
-        parameters = matches[0]
-    strIndex = 0
-    arrayStack = ""
-    while strIndex < len(parameters):
-        if parameters[strIndex] == arrayChar:
-            arrayStack += arrayChar
-        elif parameters[strIndex] in types:
-            if len(arrayStack) > 0:
-                arrayStack += parameters[strIndex]
-                param[pIndex] = arrayStack
-                arrayStack = ""
-            else:
-                param[pIndex] = parameters[strIndex]
-            if parameters[strIndex] == 'L':
-                while parameters[strIndex] != ';':
-                    strIndex += 1
-            pIndex += 1
-        strIndex += 1
-    return param
+    return _getParametersFromMethod(line, pIndex, param)
 
 def _getParametersTotalSize(parameters):
     """Get the total number of parameters from the parameter dict."""
@@ -292,7 +323,7 @@ def _injectMethodPrologue(source, output):
             output.write(line)
 
 def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
-    appId, injectedMethods):
+    appId, injectedMethods, methodsToParameters):
     """Inject the body of current method."""
     depth = 0
     apiCalls = [[]]
@@ -348,7 +379,7 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
             apiName = _getNameFromInvoke(strip)
             apiCalls[depth].append('l{} {}'.format(lineNumber, apiName))
 
-        elif _lineHasInvoke(strip, appId, injectedMethods):
+        elif _lineHasInvoke(strip, appId, injectedMethods, methodsToParameters):
             name = _getNameFromInvoke(strip, appId)[len(appId):]
             msg = 'invoking subroutine l{} {}'.format(lineNumber, name)
             _addCustomLog(output, msg, newReg)
@@ -373,7 +404,7 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
             # logfile.close()
             return
 
-def _injectFile(path, injectedMethods):
+def _injectFile(path, injectedMethods, methodsToParameters):
     """Inject a single file."""
     with open(path,'r') as source:
         # print ("Injecting into " + path)
@@ -383,13 +414,13 @@ def _injectFile(path, injectedMethods):
                 newReg, remappedParam, parameterMap = _injectMethodPrologue(source,
                     output)
                 _injectMethodBody(source, output, newReg, remappedParam,
-                    parameterMap, appId, injectedMethods)
+                    parameterMap, appId, injectedMethods, methodsToParameters)
             output.close()
         source.close()
     # overwrite the original file
     os.rename(path + outputExtension, path)
 
-def _scanFile(path, methodsToInject):
+def _scanFile(path, methodsToInject, methodsToParameters):
     """Scan a single file and get the set of its methods to inject."""
     with open(path,'r') as source:
 
@@ -407,16 +438,23 @@ def _scanFile(path, methodsToInject):
                 methodName = _getNameFromSig(line, className)
 
                 if _hasApis(source):
+                    methodParams = _getParametersFromMethodSignature(line)
+                    if methodName in methodsToParameters:
+                        methods = methodsToParameters[methodName]
+                        methods.append(methodParams)
+                    else:
+                        methods = [methodParams]
+                        methodsToParameters[methodName] = methods
                     methodsToInject.add(methodName)
 
         source.close()
         return
 
-def _scan(path, filesToInject, methodsToInject):
+def _scan(path, filesToInject, methodsToInject, methodsToParameters):
     """Get the set of files and method to inject from a initial set of files."""
     # if path is an application file, it needs to be scanned and injected
     if os.path.isfile(path) and _isAppFile(path):
-        _scanFile(path, methodsToInject)
+        _scanFile(path, methodsToInject, methodsToParameters)
         filesToInject.add(path)
 
    # recurse if path is a directory
@@ -429,13 +467,14 @@ def _scan(path, filesToInject, methodsToInject):
         files = glob.glob(path)
 
         for f in files:
-            _scan(f, filesToInject, methodsToInject)
+            _scan(f, filesToInject, methodsToInject, methodsToParameters)
 
 
 def main(argv):
     """Inject a set of files."""
     filesToInject = set()
     methodsToInject = set()
+    methodsToParameters = {}
     # Clear log file
     # logfile = open("injectlogfile.txt", "w")
     # logfile.close()
@@ -446,10 +485,11 @@ def main(argv):
             raise RuntimeError('No files mathing path: ' + path)
         print 'inject.py: injecting files at: ' + path
 
-        _scan(path, filesToInject, methodsToInject)
+        _scan(path, filesToInject, methodsToInject, methodsToParameters)
 
     for path in filesToInject:
-        _injectFile(path, injectedMethods = methodsToInject)
+        _injectFile(path, injectedMethods = methodsToInject,
+            methodsToParameters = methodsToParameters)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
