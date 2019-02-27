@@ -29,15 +29,19 @@ def _addSubroutineCall(apiDicts, routine_name, subroutine, lineNumber):
         apiData[routine_name].subroutines[lineNumber] = subroutine
 
 
-def _addAPICall(apiDicts, routineStack, lineStack, apiName):
+def _addAPICall(apiDicts, routineStack, lineStack, apiName, routineName):
     """Attributes API call to all routines in current routine stack for a given
        thread id.
     """
-    if len(routineStack) != len(lineStack):
-        raise RuntimeError(
-            'Error in call stack: Routine stack size neq to line stack size\n' +
-            'Routine stack size: %d\nLine stack size: %d' %
-            (len(routineStack), len(lineStack)))
+    if len(lineStack) - len(routineStack) == 1:
+        routineStack.append(routineName)
+    elif len(routineStack) != len(lineStack):
+        msg = 'Error in call stack: Routine stack size neq to line stack ' + \
+            'size\nRoutine stack size: {}\nLine stack size: {}\n' + \
+            'RoutineStack: {}\nLineStack: {}'
+        msg = msg.format(len(routineStack),
+            len(lineStack), str(routineStack), str(lineStack))
+        raise RuntimeError(msg)
     for apiData in apiDicts:
         for routine_name, lineNumber in zip(routineStack, lineStack):
             apiData[routine_name].addApi(apiName, lineNumber)
@@ -53,6 +57,9 @@ def _searchAndRemoveInStacks(routineStack, lineStack, tid, item):
     """Looks for item in stack and removes everything after it and itself"""
     try:
         index = len(routineStack[tid])-1 - routineStack[tid][::-1].index(item)
+        # msg = "Removing Item: {} from RoutineStack: {}\n"
+        # msg = msg.format(str(item), str(routineStack))
+        # print (msg)
         routineStack[tid] = routineStack[tid][:index]
         lineStack[tid] = lineStack[tid][:index]
         return True
@@ -100,12 +107,16 @@ def _parseData(logcat, apiDataAggregated):
                 _addRoutineCall([apiData, apiDataAggregated], routine_name)
                 _addToStack(routineStack, tid, routine_name)
 
-                if len(routineStack[tid]) > 1 and \
-                (tid not in lineStack or \
-                len(routineStack[tid]) - len(lineStack[tid]) > 1):
-                    _addToStack(lineStack, tid, -1)
+                if len(routineStack[tid]) > 1:
+                    if tid not in lineStack:
+                        _addToStack(lineStack, tid, -1)
+                    elif len(routineStack[tid]) - len(lineStack[tid]) > 1:
+                        diff = len(routineStack[tid]) - len(lineStack[tid]) - 1
+                        for i in range(0, diff):
+                            _addToStack(lineStack, tid, -1)
 
             elif line.find(' invoking ') >= 0:
+                # print ("Processing invoke statment at line number: %d" % (index+1))
 
                 _addSubroutineCall([apiData, apiDataAggregated], routine_name,
                     name, int(lineNumber))
@@ -115,19 +126,22 @@ def _parseData(logcat, apiDataAggregated):
                 # print ("Processing API call at line number: %d" % (index+1))
                 _addToStack(lineStack, tid, int(lineNumber))
                 _addAPICall([apiData, apiDataAggregated], routineStack[tid],
-                    lineStack[tid], name)
+                    lineStack[tid], name, routine_name)
                 lineStack[tid].pop()
 
             elif line.find(' exiting ') >= 0:
-                expectedName = routineStack[tid][-1]
+                expectedName = routineStack[tid][-1] if len(routineStack[tid]) > 0 else ""
                 if name != expectedName:
                     if not _searchAndRemoveInStacks(routineStack,
                         lineStack, tid, name):
                         # Erroneous exit statement. Skip it for now. Do not pop
                         # routine stack or line stack
-                        msg = 'Issue in the execution trace.\nFile: {}\nRoutine Stack: {}\n'
-                        msg += 'Exiting: {}\nExpected: {}\nLine: {}'
-                        msg = msg.format(logcat, str(routineStack), name,
+                        msg = '----------------------\n'
+                        msg += 'Issue in the execution trace.\nFile: {}\n'
+                        msg += 'Thread ID: {}\nRoutine Stack: {}\n'
+                        msg += 'Exiting: {}\nExpected: {}\nLine: {}\n'
+                        msg += '----------------------'
+                        msg = msg.format(logcat, str(tid), str(routineStack), name,
                             expectedName, index+1)
                         # raise RuntimeError(msg)
                         print (msg)
