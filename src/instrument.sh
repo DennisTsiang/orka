@@ -29,23 +29,28 @@ fi
 # decompile with ApkTool, the -f will clear the $OUTDIR directory
 java -jar $APKTOOL d $APKFILE -o $OUTDIR/ --no-res --force
 
-# Check which smali folder the actual application has been decompiled to
 echo "OUTDIR: $OUTDIR"
 echo "PDIR: $PDIR"
-smali_folder=$(find -wholename "*$PDIR*" 2>/dev/null |  head -n 1)
-smali_folder=$(cd $smali_folder; pwd)
-smali_folder=${smali_folder#$OUTDIR}
-smali_folder=$(echo $smali_folder | cut -d'/' -f2)
-echo "App found in smali folder: $smali_folder"
+cd $OUTDIR
+find_paths=()
+
+# Store result of find command into array
+mapfile -t find_paths < <(find -wholename "*$PDIR*" | cut -d'/' -f2)
+
+# Remove duplicates from array
+smali_folders=($(printf "%s\n" "${find_paths[@]}" | sort -u))
 
 # add logger smali file
-cp $LOGGER $OUTDIR/$smali_folder/$PDIR/Logger.smali
+cp $LOGGER $OUTDIR/${smali_folders[0]}/$PDIR/Logger.smali
 
-# inject application
-python $ORKA_HOME/src/inject.py $OUTDIR/$smali_folder/$PDIR/
+for smali_folder in "${smali_folders[@]}"
+do
+  # inject application
+  python $ORKA_HOME/src/inject.py $OUTDIR/$smali_folder/$PDIR/
+done
 
 #check the .smali1 code exists
-if ls "$OUTDIR/$smali_folder/$PDIR/*.smali.orkatmp" 1> /dev/null 2>&1;
+if ls "$OUTDIR/${smali_folders[0]}/$PDIR/*.smali.orkatmp" 1> /dev/null 2>&1;
     then
         echo "Cannot find the instrumented files please make sure the injector ran correctly"
         exit

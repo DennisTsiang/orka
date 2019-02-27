@@ -170,7 +170,6 @@ def _jumpToInjectedMethod(source, output, injectedMethods, className):
         # if method declaration and not constructor and has API return True
         # and not an abstract method
         if strip.startswith('.method') and 'abstract' not in strip \
-        and 'constructor' not in strip \
         and _getNameFromSig(strip, className) in injectedMethods:
             source.seek(prevLine)
             return True
@@ -328,11 +327,10 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
     """Inject the body of current method."""
     depth = 0
     apiCalls = [[]]
-    exitLogged = False
     lineNumber = "-1"
     # logfile = open("injectlogfile.txt", "a")
     # logfile.write("injecting into method body of " + source.name + "\n")
-
+    prevLine = ''
     while True:
         line = source.readline()
         # logfile.write(str(datetime.datetime.now()).split('.')[0] + line+"\n")
@@ -386,6 +384,7 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
             _addCustomLog(output, msg, newReg)
 
         elif strip.startswith('.line') or strip.startswith('return') \
+            or strip.startswith('throw') \
             or strip.startswith('.end method'):
             _addAllLogAPI(output, apiCalls[0], newReg)
             apiCalls[0] = []
@@ -393,14 +392,16 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
             if strip.startswith('.line'):
                 lineNumber = strip.split()[-1]
             # if return or end of method, log an exit method message
-            elif strip.startswith('return'):
+            elif strip.startswith('return') or strip.startswith('throw'):
                 _addMethodExitLog(output)
-                exitLogged = True
-            elif not exitLogged:
+                # exitLogged = True
+            elif 'return' not in prevLine and 'throw' not in prevLine:
                 # for .end method
                 _addMethodExitLog(output)
 
         output.write(line)
+        if strip != '':
+            prevLine = line
         if strip.startswith('.end method'):
             # logfile.close()
             return

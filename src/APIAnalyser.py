@@ -30,7 +30,9 @@ def _addSubroutineCall(apiDicts, routine_name, subroutine, lineNumber):
 
 
 def _addAPICall(apiDicts, routineStack, lineStack, apiName):
-    """Add API call."""
+    """Attributes API call to all routines in current routine stack for a given
+       thread id.
+    """
     if len(routineStack) != len(lineStack):
         raise RuntimeError(
             'Error in call stack: Routine stack size neq to line stack size\n' +
@@ -47,6 +49,16 @@ def _addToStack(stack, tid, item):
             stack[tid] = []
     stack[tid].append(item)
 
+def _searchAndRemoveInStacks(routineStack, lineStack, tid, item):
+    """Looks for item in stack and removes everything after it and itself"""
+    try:
+        index = len(routineStack[tid])-1 - routineStack[tid][::-1].index(item)
+        routineStack[tid] = routineStack[tid][:index]
+        lineStack[tid] = lineStack[tid][:index]
+        return True
+    except ValueError as ve:
+        return False
+
 # bwestfield - function that draws the APIs from logcat then compares to the list
 # of API costs. Returns a dictionary of Routine object
 def _parseData(logcat, apiDataAggregated):
@@ -56,6 +68,10 @@ def _parseData(logcat, apiDataAggregated):
     Keyword arguments:
     logcat -- path to the logcat file to parse
     apiDataAggregated -- dict containing the logcat data aggregated over all runs
+
+    routineStack - contains a stack of method calls that contain API calls
+                   separated by their thread id
+    lineStack - contains line numbers separated by thread id
     """
 
     apiData = {}
@@ -68,6 +84,14 @@ def _parseData(logcat, apiDataAggregated):
             name = _sanitise(line.split(' ')[-1])
             tid = line.split()[3].strip()
             lineNumber = line.split()[-2][1:]
+
+            # temporary if check to skip non-orka related logs
+            splits = line.split()
+            if len(splits) < 6:
+                continue
+            tag = splits[5].strip()
+            if 'orka' not in tag:
+                continue
 
             #then one of the inserted logs
             if line.find(' entering ') >= 0:
@@ -95,15 +119,22 @@ def _parseData(logcat, apiDataAggregated):
                 lineStack[tid].pop()
 
             elif line.find(' exiting ') >= 0:
-                if tid in lineStack and len(lineStack[tid]) > 0:
-                    lineStack[tid].pop()
-                expectedName = routineStack[tid].pop()
+                expectedName = routineStack[tid][-1]
                 if name != expectedName:
-                    msg = 'Issue in the execution trace.\nFile: {}\nRoutine Stack: {}\n'
-                    msg += 'Exiting: {}\nExpected: {}\nLine: {}'
-                    msg = msg.format(logcat, str(routineStack), name,
-                        expectedName, index+1)
-                    raise RuntimeError(msg)
+                    if not _searchAndRemoveInStacks(routineStack,
+                        lineStack, tid, name):
+                        # Erroneous exit statement. Skip it for now. Do not pop
+                        # routine stack or line stack
+                        msg = 'Issue in the execution trace.\nFile: {}\nRoutine Stack: {}\n'
+                        msg += 'Exiting: {}\nExpected: {}\nLine: {}'
+                        msg = msg.format(logcat, str(routineStack), name,
+                            expectedName, index+1)
+                        # raise RuntimeError(msg)
+                        print (msg)
+                else:
+                    if tid in lineStack and len(lineStack[tid]) > 0:
+                        lineStack[tid].pop()
+                    routineStack[tid].pop()
                 if len(routineStack[tid]) > 0:
                     routine_name = routineStack[tid][-1]
 
