@@ -395,7 +395,8 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
             elif strip.startswith('return') or strip.startswith('throw'):
                 _addMethodExitLog(output)
                 # exitLogged = True
-            elif 'return' not in prevLine and 'throw' not in prevLine:
+            elif 'return' not in prevLine and 'throw' not in prevLine \
+                and '.end' not in prevLine:
                 # for .end method
                 _addMethodExitLog(output)
 
