@@ -56,6 +56,11 @@ parser.add_argument('--method', dest='method',
                     default="Monkeyrunner",
                     help='use this option to change the testing method ' \
                     'allowed options are: DroidMate-2, monkeyrunner')
+parser.add_argument('--avd', dest='avd',
+                    help='use this option to set which avd to use')
+parser.add_argument('--port', dest='port',
+                    default="5554",
+                    help='use this option to set which port the avd should run on')
 
 def getPackageInfo(app):
     """Retrieve package information from an apk."""
@@ -135,10 +140,10 @@ def _instrument(app, packName, packDir):
     return os.path.exists(pathApiFound)
 
 def _runSimulation(pathOrkaApk, packName, avd, scriptCmd,
-    nRuns):
+    nRuns, port):
     """Runs a command on an injected apk."""
     cmd = [ORKAHOME + "/src/simulationMaster.sh ", pathOrkaApk, packName, avd,
-        scriptCmd, nRuns]
+        scriptCmd, nRuns, port]
     cmd = ' '.join(cmd)
     runProcess(cmd)
 
@@ -165,11 +170,12 @@ def main(args):
     # parse the configuration file
     emul, apps, monkey, monkeyInputs, nRuns = config.parseConfig(pathConf,
         args.batchMode)
-
     if args.argApp:
         apps = [args.argApp]
     if args.argMonkey:
         monkeyInputs = [args.argMonkey]
+    if args.avd:
+        emul = args.avd
 
     for app, monkeyInput in zip(apps, monkeyInputs):
         #get package name and directory
@@ -196,10 +202,11 @@ def main(args):
                     + " --Exploration-widgetActionDelay=100")
             else:
                 scriptCmd = ' '.join([ORKASDK+"/tools/bin/monkeyrunner",
-                    monkey, compName, monkeyInput])
+                    monkey, compName, monkeyInput, args.port])
             scriptCmd = "\'" + scriptCmd + "\'"
             print ("Running simulation with command: " + scriptCmd)
-            _runSimulation(pathOrkaApk, packName, emul, scriptCmd, nRuns)
+            _runSimulation(pathOrkaApk, packName, emul, scriptCmd, nRuns,
+                args.port)
 
         # render results
         if not args.skipAn:

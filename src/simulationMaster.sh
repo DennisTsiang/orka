@@ -16,8 +16,8 @@ PACKAGE_NAME=$2
 AVD=$3
 SCRIPT_CMD=$4
 NRUNS=$5
+PORT=$6
 
-PORT=5554
 ADB=$ANDROID_HOME/platform-tools/adb
 
 # create or clear output directory if needed
@@ -34,20 +34,34 @@ if [ -d "$OUTDIR" ];
         mkdir $OUTDIR
 fi
 
+USING_EMULATOR="false"
 
-# check whether actual devices connected
+# check whether physical devices connected
 DEVICES=$($ADB devices | grep 'device\b')
 # load the emulator if needed
 # -wipe-data option reset user data on device
-if [ -z $DEVICES ];
+if [ -z "$DEVICES" ];
     then
         $ANDROID_HOME/tools/emulator -avd $AVD -port $PORT -no-boot-anim -no-snapshot-save -snapshot testsong &
+        USING_EMULATOR="true"
 fi
 
+EMULATOR_SERIAL="0"
+ADB_PREFIX=""
+if [ "$USING_EMULATOR" = "true" ];
+    then
+        EMULATOR_SERIAL="emulator-$PORT"
+        ADB_PREFIX="$ADB -s emulator-$PORT"
+else
+        ADB_PREFIX="$ADB"
+fi
+echo "ADB_PREFIX: $ADB_PREFIX"
+
 # wait for the device to boot
-$ADB wait-for-device
+$ADB_PREFIX wait-for-device
+
 while true;do
-    LOADED=$($ADB shell getprop sys.boot_completed | tr -d '\r')
+    LOADED=$($ADB_PREFIX shell getprop sys.boot_completed | tr -d '\r')
     if [ "$LOADED" = "1" ];
         then
             break
@@ -57,19 +71,19 @@ while true;do
 done
 
 # uninstall any previous version of APK
-$ADB shell pm uninstall $APK
+$ADB_PREFIX shell pm uninstall $APK
 # install the APK
-$ADB install $APK
+$ADB_PREFIX install $APK
 # get app uid
-APPUID=$($ADB shell dumpsys package $PACKAGE_NAME | grep -oP '(?<=userId=)\S+' | head -n 1)
+APPUID=$($ADB_PREFIX shell dumpsys package $PACKAGE_NAME | grep -oP '(?<=userId=)\S+' | head -n 1)
 echo "APPUID: $APPUID"
 echo $APPUID > $OUTDIR/appuid
 
 # disable ac charging
-$ADB shell dumpsys battery set ac 0
+$ADB_PREFIX shell dumpsys battery set ac 0
 
 #unlock screen
-$ADB shell input keyevent 82
+$ADB_PREFIX shell input keyevent 82
 
 for i in `seq 1 $NRUNS`;
     do
@@ -82,20 +96,20 @@ for i in `seq 1 $NRUNS`;
         echo "NETSTATS: $NETSTATS"
 
         # reset logcat
-        $ADB logcat -c
+        $ADB_PREFIX logcat -c
 
         # start dumping log
         # only outputs logs with tag orka at priority "info"
-        $ADB logcat -v threadtime orka:I *:S > $LOGCAT &
+        $ADB_PREFIX logcat -v threadtime orka:I *:S > $LOGCAT &
         LOGCAT_PID=$!
         # start monitoring traffic. & makes it run in the background
-        python $ORKA_HOME/src/netstatsMonitor.py -o $NETSTATS -i $APPUID &
+        python $ORKA_HOME/src/netstatsMonitor.py -o $NETSTATS -i $APPUID -e $EMULATOR_SERIAL &
         NETSTATS_PID=$!
 
         # reset battery stats and disable usb charging
-        $ADB shell dumpsys batterystats --reset
-        $ADB shell dumpsys battery set usb 1
-        $ADB shell dumpsys battery set usb 0
+        $ADB_PREFIX shell dumpsys batterystats --reset
+        $ADB_PREFIX shell dumpsys battery set usb 1
+        $ADB_PREFIX shell dumpsys battery set usb 0
         sleep 1
 
         #run script command
@@ -110,19 +124,19 @@ for i in `seq 1 $NRUNS`;
         kill $NETSTATS_PID
 
         # dump battery stats
-        $ADB shell dumpsys batterystats --charged > $BATTERYSTATS
+        $ADB_PREFIX shell dumpsys batterystats --charged > $BATTERYSTATS
         # stop app and clear app data
-        $ADB shell pm clear $PACKAGE_NAME
+        $ADB_PREFIX shell pm clear $PACKAGE_NAME
     done
 
 # uninstall the APK
-$ADB uninstall $PACKAGE_NAME
+$ADB_PREFIX uninstall $PACKAGE_NAME
 
 # reset usb charging
-$ADB shell dumpsys battery set usb 1
+$ADB_PREFIX shell dumpsys battery set usb 1
 
 # kill emulator if it was booted by orka
 if [ -z "$DEVICES" ];
     then
-        $ADB emu kill
+        $ADB_PREFIX emu kill
 fi

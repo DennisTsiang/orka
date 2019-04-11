@@ -12,6 +12,9 @@ parser.add_argument('-i', '--uid', nargs = 1,
                     help = 'app uid of the application to monitor')
 parser.add_argument('-o', nargs = 1,
                     help = 'output path in monitoring mode')
+parser.add_argument('-e', dest='emulatorSerial',
+                    help = 'if using emulator pass this arguement to ' +
+                        'set emulator serial number')
 
 ORKASDK = os.environ['ANDROID_HOME']
 ADB = ORKASDK + "/platform-tools/adb"
@@ -96,6 +99,7 @@ def main(outputPath, uid = '10037', tail_time = .220): # scan chrome by default
 
 
 if __name__ == "__main__":
-
     args = parser.parse_args()
+    if args.emulatorSerial != "0":
+        ADB += " -s " + args.emulatorSerial
     main(args.o[0], args.uid[0])

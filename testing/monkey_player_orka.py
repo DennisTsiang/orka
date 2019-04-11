@@ -22,8 +22,11 @@ CMD_MAP = {
 timeout = 10000
 componentName = sys.argv[1]
 scriptName = sys.argv[2]
+emulatorSerialNumber = sys.argv[3]
 
-device = MonkeyRunner.waitForConnection(timeout)
+device = MonkeyRunner.waitForConnection(
+    timeout,
+    "emulator-"+emulatorSerialNumber)
 device.startActivity(component=componentName)
 
 time.sleep(3)
