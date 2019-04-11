@@ -19,6 +19,8 @@ from matplotlib import rcParams
 
 # Const
 ORKAHOME = os.environ['ORKA_HOME']
+if ORKAHOME[-1] == "/":
+    ORKAHOME = ORKAHOME[:-1]
 ORKASDK = os.environ['ANDROID_HOME']
 
 ADB = ORKASDK + "/platform-tools/adb"
@@ -187,10 +189,11 @@ def main(args):
         if not (args.skipSimul and os.path.exists(logcat) \
             and os.path.exists(batterystats)):
             if args.method == "DroidMate-2":
-                scriptCmd = ("java -jar vendor/orka/dependencies/DM-2-mod.jar "+
+                scriptCmd = ("java -jar vendor/orka/dependencies/DM-2.jar "+
                     "--Exploration-apksDir=" +
                     outputDir + "/dist --Output-outputDir=" + resultsDir
-                    + "/droidmate" + " --Selectors-actionLimit=5")
+                    + "/droidmate" + " --Selectors-actionLimit=5"
+                    + " --Exploration-widgetActionDelay=100")
             else:
                 scriptCmd = ' '.join([ORKASDK+"/tools/bin/monkeyrunner",
                     monkey, compName, monkeyInput])

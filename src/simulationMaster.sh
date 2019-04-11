@@ -110,7 +110,7 @@ for i in `seq 1 $NRUNS`;
         kill $NETSTATS_PID
 
         # dump battery stats
-        $ADB shell dumpsys batterystats > $BATTERYSTATS
+        $ADB shell dumpsys batterystats --charged > $BATTERYSTATS
         # stop app and clear app data
         $ADB shell pm clear $PACKAGE_NAME
     done
