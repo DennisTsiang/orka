@@ -125,12 +125,28 @@ def _parseData(logcat, apiDataAggregated):
             elif line.find(' API call ') >= 0:
                 # print ("Processing API call at line number: %d" % (index+1))
                 _addToStack(lineStack, tid, int(lineNumber))
-                _addAPICall([apiData, apiDataAggregated], routineStack[tid],
-                    lineStack[tid], name, routine_name)
+                try:
+                    _addAPICall([apiData, apiDataAggregated], routineStack[tid],
+                        lineStack[tid], name, routine_name)
+                except KeyError as ke:
+                    msg = '----------------------\n'
+                    msg += 'Issue in the execution trace. File:{}\n'
+                    msg += 'Could not find tid in routineStack\n'
+                    msg += 'Thread ID: {}\nRoutine Stack: {}\n'
+                    msg += 'Line Stack:{}\nLine number: {}\n'
+                    msg += '----------------------'
+                    msg = msg.format(logcat, str(tid), str(routineStack),
+                            str(lineStack), index+1)
+                    print (msg)
                 lineStack[tid].pop()
 
             elif line.find(' exiting ') >= 0:
-                expectedName = routineStack[tid][-1] if len(routineStack[tid]) > 0 else ""
+                expectedName = ""
+                try:
+                    if len(routineStack[tid]) > 0:
+                        expectedName = routineStack[tid][-1]
+                except KeyError as ke:
+                     pass
                 if name != expectedName:
                     if not _searchAndRemoveInStacks(routineStack,
                         lineStack, tid, name):
