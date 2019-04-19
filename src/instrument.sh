@@ -56,7 +56,7 @@ if ls "$OUTDIR/${smali_folders[0]}/$PDIR/*.smali.orkatmp" 1> /dev/null 2>&1;
         exit
 fi
 
-# java -jar $APKTOOL empty-framework-dir --force
+java -jar $APKTOOL empty-framework-dir --force
 # recompile application
 java -jar $APKTOOL b $OUTDIR/ -o $ORKA_APK
 

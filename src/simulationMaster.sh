@@ -17,6 +17,7 @@ AVD=$3
 SCRIPT_CMD=$4
 NRUNS=$5
 PORT=$6
+PICKLE=$7
 
 ADB=$ANDROID_HOME/platform-tools/adb
 
@@ -98,6 +99,13 @@ for i in `seq 1 $NRUNS`;
         # reset logcat
         $ADB_PREFIX logcat -c
 
+        # Start ACVTool to get statement coverage
+        # -q flag starts in the background
+        if [ -n "$PICKLE" ]; then
+          echo "Startgin ACV"
+          acv start $PACKAGE_NAME -q -d $EMULATOR_SERIAL
+          sleep 1
+        fi
         # start dumping log
         # only outputs logs with tag orka at priority "info"
         $ADB_PREFIX logcat -v threadtime orka:I *:S > $LOGCAT &
@@ -117,7 +125,7 @@ for i in `seq 1 $NRUNS`;
         $SCRIPT_CMD
 
         # wait for execution to fully terminate
-        sleep 5
+        sleep 4
 
         # stop dumping log and monitoring traffic
         kill $LOGCAT_PID
@@ -125,6 +133,13 @@ for i in `seq 1 $NRUNS`;
 
         # dump battery stats
         $ADB_PREFIX shell dumpsys batterystats --charged > $BATTERYSTATS
+
+        # generate statement coverage report
+        if [ -n "$PICKLE" ]; then
+          acv stop $PACKAGE_NAME -d $EMULATOR_SERIAL -t 10
+          acv report -p $PICKLE -o $OUTDIR -html -o $OUTDIR $PACKAGE_NAME
+        fi
+
         # stop app and clear app data
         $ADB_PREFIX shell pm clear $PACKAGE_NAME
     done

@@ -197,6 +197,7 @@ def _remapParameters(line, pMap):
     matches = re.findall(registerPattern, remappedLine)
     outOfRegisterRange = _outOfRegisterRange(matches, 15)
     if 'move-object' in remappedLine \
+    and 'move-object/16' not in remappedLine \
     and 'move-object/from16' not in remappedLine \
     and outOfRegisterRange:
         remappedLine = remappedLine.replace('move-object','move-object/from16',1)

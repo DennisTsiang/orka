@@ -16,6 +16,7 @@ import glob
 import argparse
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
+import distutils.spawn
 
 # Const
 ORKAHOME = os.environ['ORKA_HOME']
@@ -61,6 +62,10 @@ parser.add_argument('--avd', dest='avd',
 parser.add_argument('--port', dest='port',
                     default="5554",
                     help='use this option to set which port the avd should run on')
+parser.add_argument('--pickle', dest='pickle',
+                    default="",
+                    help='use this option to set the pickle location for' \
+                    'ACVTool')
 
 def getPackageInfo(app):
     """Retrieve package information from an apk."""
@@ -140,10 +145,10 @@ def _instrument(app, packName, packDir):
     return os.path.exists(pathApiFound)
 
 def _runSimulation(pathOrkaApk, packName, avd, scriptCmd,
-    nRuns, port):
+    nRuns, port, pickle):
     """Runs a command on an injected apk."""
     cmd = [ORKAHOME + "/src/simulationMaster.sh ", pathOrkaApk, packName, avd,
-        scriptCmd, nRuns, port]
+        scriptCmd, nRuns, port, pickle]
     cmd = ' '.join(cmd)
     runProcess(cmd)
 
@@ -206,7 +211,7 @@ def main(args):
             scriptCmd = "\'" + scriptCmd + "\'"
             print ("Running simulation with command: " + scriptCmd)
             _runSimulation(pathOrkaApk, packName, emul, scriptCmd, nRuns,
-                args.port)
+                args.port, args.pickle)
 
         # render results
         if not args.skipAn:
@@ -216,4 +221,8 @@ def main(args):
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    acvtoolPath = distutils.spawn.find_executable('acv');
+    if acvtoolPath is None or  acvtoolPath == "":
+        print ("Cannot find ACVTool installation on machine.")
+        exit(1);
     main(args)
