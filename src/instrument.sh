@@ -40,6 +40,11 @@ mapfile -t find_paths < <(find -wholename "*$PDIR*" | cut -d'/' -f2)
 # Remove duplicates from array
 smali_folders=($(printf "%s\n" "${find_paths[@]}" | sort -u))
 
+if [ ${#find_paths[@]} -eq 0 ]; then
+  echo "Could not find the smali folder(s) containing app package directory"
+  exit 2
+fi
+
 # add logger smali file
 cp $LOGGER $OUTDIR/${smali_folders[0]}/$PDIR/Logger.smali
 

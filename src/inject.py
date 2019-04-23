@@ -83,6 +83,11 @@ def _getParametersFromMethod(line, pIndex, param):
                 arrayStack += parameters[strIndex]
                 param[pIndex] = arrayStack
                 arrayStack = ""
+            elif parameters[strIndex] == 'J' or parameters[strIndex] == 'D':
+                # Longs and doubles take up two parameters
+                param[pIndex] = parameters[strIndex]
+                pIndex += 1
+                # Later in injectMethodPrologue, both parameters will be remapped correctly
             else:
                 param[pIndex] = parameters[strIndex]
             if parameters[strIndex] == 'L':
@@ -201,6 +206,9 @@ def _remapParameters(line, pMap):
     and 'move-object/from16' not in remappedLine \
     and outOfRegisterRange:
         remappedLine = remappedLine.replace('move-object','move-object/from16',1)
+    elif re.search(r"move ", remappedLine) > 0 is not None \
+    and outOfRegisterRange:
+        remappedLine = remappedLine.replace('move','move/from16',1)
     return remappedLine
 
 def _getParametersList(fi):
@@ -266,11 +274,6 @@ def _injectMethodPrologue(source, output):
             lineArray = line.split('.locals')
             newReg = int(lineArray[1])
 
-            # Can't inject line as already has 16 local variables
-            if newReg == 16:
-                output.write(line)
-                continue
-
             remappedParam = _needMoveParam(newReg, paramSize)
             # if remappedParam and 'subreddit/header/c.smali' in source.name:
                 # logfile.write("This line require remapping parameters. locals %d parameters %d\n" % (newReg, paramSize))
@@ -308,7 +311,7 @@ def _injectMethodPrologue(source, output):
                     if item == 'J' or item =='D':
                         output.write('     move-wide/16 '\
                             + mapping + ', ' + reg + '\n\n')
-                    elif item =='L':
+                    elif item =='L' or item == '[L':
                         output.write('     move-object/from16 '\
                             + mapping +', ' + reg +'\n\n')
                     else:

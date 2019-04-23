@@ -101,6 +101,9 @@ def runProcess(cmd, getStdout = False):
     p.wait()
 
     # check return code
+    if p.returncode == 2:
+        print ("Error occurred in command. Returning exit code 2")
+        return "Exit code 2"
     if p.returncode != 0:
         error = "invalid command attempted to be executed in runProcess - {}"
         raise RuntimeError(error.format(cmd))

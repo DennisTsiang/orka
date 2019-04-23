@@ -144,8 +144,16 @@ def _instrument(app, packName, packDir):
     """Generate an injected, signed APK file from an initial APK."""
     cmd = [ORKAHOME + "/src/instrument.sh", app, packName, packDir]
     cmd = ' '.join(cmd)
-    runProcess(cmd)
-
+    exitCode = runProcess(cmd)
+    while exitCode != None and exitCode == "Exit code 2":
+        firstSlashIndex = packDir.find("/")
+        if firstSlashIndex == -1:
+           raise RuntimeError("Could not find smali folders") 
+        packDir = packDir[firstSlashIndex+1:]
+        exitCode = None
+        cmd = [ORKAHOME + "/src/instrument.sh", app, packName, packDir]
+        cmd = ' '.join(cmd)
+        exitCode = runProcess(cmd)
     return os.path.exists(pathApiFound)
 
 def _runSimulation(pathOrkaApk, packName, avd, scriptCmd,

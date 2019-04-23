@@ -108,7 +108,8 @@ for i in `seq 1 $NRUNS`;
         fi
         # start dumping log
         # only outputs logs with tag orka at priority "info"
-        $ADB_PREFIX logcat -v threadtime orka:I *:S > $LOGCAT &
+        #$ADB_PREFIX logcat -v threadtime orka:I *:S > $LOGCAT &
+        $ADB_PREFIX logcat -v threadtime orka:I AndroidRuntime:E *:S> $LOGCAT &
         LOGCAT_PID=$!
         # start monitoring traffic. & makes it run in the background
         python $ORKA_HOME/src/netstatsMonitor.py -o $NETSTATS -i $APPUID -e $EMULATOR_SERIAL &
