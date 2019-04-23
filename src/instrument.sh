@@ -61,4 +61,5 @@ java -jar $APKTOOL empty-framework-dir --force
 java -jar $APKTOOL b $OUTDIR/ -o $ORKA_APK
 
 # sign application
+echo jarsigner -keystore $KEYSTORE $ORKA_APK androiddebugkey -storepass android
 jarsigner -keystore $KEYSTORE $ORKA_APK androiddebugkey -storepass android

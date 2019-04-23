@@ -66,6 +66,10 @@ parser.add_argument('--pickle', dest='pickle',
                     default="",
                     help='use this option to set the pickle location for' \
                     'ACVTool')
+parser.add_argument('--delay', dest='delay',
+                    default="1000",
+                    help='use this option to set the delay between button presses' \
+                    'for DroidMate-2')
 
 def getPackageInfo(app):
     """Retrieve package information from an apk."""
@@ -204,7 +208,7 @@ def main(args):
                     "--Exploration-apksDir=" +
                     outputDir + "/dist --Output-outputDir=" + resultsDir
                     + "/droidmate" + " --Selectors-actionLimit=5"
-                    + " --Exploration-widgetActionDelay=100")
+                    + " --Exploration-widgetActionDelay="+args.delay)
             else:
                 scriptCmd = ' '.join([ORKASDK+"/tools/bin/monkeyrunner",
                     monkey, compName, monkeyInput, args.port])

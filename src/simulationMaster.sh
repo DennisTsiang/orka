@@ -38,7 +38,7 @@ fi
 USING_EMULATOR="false"
 
 # check whether physical devices connected
-DEVICES=$($ADB devices | grep 'device\b')
+DEVICES=$($ADB devices | grep 'device\b' | grep -v 'emulator')
 # load the emulator if needed
 # -wipe-data option reset user data on device
 if [ -z "$DEVICES" ];
@@ -102,7 +102,7 @@ for i in `seq 1 $NRUNS`;
         # Start ACVTool to get statement coverage
         # -q flag starts in the background
         if [ -n "$PICKLE" ]; then
-          echo "Startgin ACV"
+          echo "Starting ACV"
           acv start $PACKAGE_NAME -q -d $EMULATOR_SERIAL
           sleep 1
         fi
