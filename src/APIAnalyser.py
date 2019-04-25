@@ -25,6 +25,8 @@ def _addRoutineCall(apiDicts, routine_name):
 
 def _addSubroutineCall(apiDicts, routine_name, subroutine, lineNumber):
     """Add subroutine call to given routine at specified lineNumber."""
+    # print ("_addSubroutineCall routine_name: %s" % routine_name)
+    # print ("_addSubroutineCall lineNumber: %d" % lineNumber)
     for apiData in apiDicts:
         apiData[routine_name].subroutines[lineNumber] = subroutine
 
@@ -33,17 +35,24 @@ def _addAPICall(apiDicts, routineStack, lineStack, apiName, routineName):
     """Attributes API call to all routines in current routine stack for a given
        thread id.
     """
-    if len(lineStack) - len(routineStack) == 1:
-        routineStack.append(routineName)
+    # Handle case where methods were invoked but they did not follow with an
+    # enter line
+    if len(lineStack) - len(routineStack) >= 1:
+        diff = len(lineStack) - len(routineStack)
+        originalRoutineStackSize = len(routineStack)
+        for i in range(0, diff):
+            missingRoutineName = lineStack[originalRoutineStackSize+i][1]
+            routineStack.append(missingRoutineName)
+            _addRoutineCall(apiDicts, missingRoutineName)
     elif len(routineStack) != len(lineStack):
         msg = 'Error in call stack: Routine stack size neq to line stack ' + \
             'size\nRoutine stack size: {}\nLine stack size: {}\n' + \
-            'RoutineStack: {}\nLineStack: {}'
+            'RoutineStack: {}\nLineStack: {}\n'
         msg = msg.format(len(routineStack),
             len(lineStack), str(routineStack), str(lineStack))
         raise RuntimeError(msg)
     for apiData in apiDicts:
-        for routine_name, lineNumber in zip(routineStack, lineStack):
+        for routine_name, (lineNumber, also_routine_name) in zip(routineStack, lineStack):
             apiData[routine_name].addApi(apiName, lineNumber)
 
 def _addToStack(stack, tid, item):
@@ -53,15 +62,38 @@ def _addToStack(stack, tid, item):
             stack[tid] = []
     stack[tid].append(item)
 
+def _searchAndRemoveInLinestack(lineStack, tid, expectedName, routineStack):
+    if len(lineStack[tid]) == 0:
+        return
+    removeIndex = len(lineStack[tid])
+    for index, (lineNumber, routineName) in reversed(list(enumerate(lineStack[tid]))):
+        if routineName == expectedName:
+            removeIndex = index
+            break
+    # print ("Removing from line stack: %s" % lineStack[tid][removeIndex:])
+    lineStack[tid] =  lineStack[tid][:removeIndex]
+    # print ("Line stack %s" % lineStack[tid])
+    # After removing, line stack and routine stack may be out of sync
+    # Re-add to line stack
+    if len(routineStack[tid]) - len(lineStack[tid]) > 1:
+        diff = len(routineStack[tid]) - len(lineStack[tid]) - 1
+        originalLineStackLength = len(lineStack[tid])
+        for i in range(0, diff):
+            lineNumber = lineStack[tid][-1][0] if len(lineStack[tid]) > 0 else -1
+            _addToStack(lineStack, tid,
+                (lineNumber,
+                 routineStack[tid][originalLineStackLength+i]))
+
 def _searchAndRemoveInStacks(routineStack, lineStack, tid, item):
     """Looks for item in stack and removes everything after it and itself"""
     try:
         index = len(routineStack[tid])-1 - routineStack[tid][::-1].index(item)
-        # msg = "Removing Item: {} from RoutineStack: {}\n"
-        # msg = msg.format(str(item), str(routineStack))
+        # msg = "Removing Item: {} from RoutineStack:\n{}"
+        # msg = msg.format(str(item), str(routineStack[tid]))
         # print (msg)
         routineStack[tid] = routineStack[tid][:index]
-        lineStack[tid] = lineStack[tid][:index]
+        # print ("Routine stack:\n%s\n" % routineStack[tid])
+        _searchAndRemoveInLinestack(lineStack, tid, item, routineStack)
         return True
     except ValueError as ve:
         return False
@@ -109,22 +141,28 @@ def _parseData(logcat, apiDataAggregated):
 
                 if len(routineStack[tid]) > 1:
                     if tid not in lineStack:
-                        _addToStack(lineStack, tid, -1)
+                        lineStack[tid] = []
+                    # Handle case where line before entering method was not
+                    # a corresponding invoke line as this means that line stack 
+                    # is either empty or less than routine stack
+                    if len(lineStack[tid]) != 0 \
+                    and lineStack[tid][-1][1] != routine_name:
+                        _addToStack(lineStack, tid, (lineStack[tid][-1][0], routine_name))
                     elif len(routineStack[tid]) - len(lineStack[tid]) > 1:
-                        diff = len(routineStack[tid]) - len(lineStack[tid]) - 1
-                        for i in range(0, diff):
-                            _addToStack(lineStack, tid, -1)
+                        # diff = len(routineStack[tid]) - len(lineStack[tid]) - 1
+                        # for i in range(0, diff):
+                        _addToStack(lineStack, tid, (-1, routine_name))
 
             elif line.find(' invoking ') >= 0:
                 # print ("Processing invoke statment at line number: %d" % (index+1))
 
                 _addSubroutineCall([apiData, apiDataAggregated], routine_name,
                     name, int(lineNumber))
-                _addToStack(lineStack, tid, int(lineNumber))
+                _addToStack(lineStack, tid, (int(lineNumber), name))
 
             elif line.find(' API call ') >= 0:
                 # print ("Processing API call at line number: %d" % (index+1))
-                _addToStack(lineStack, tid, int(lineNumber))
+                _addToStack(lineStack, tid, (int(lineNumber), name))
                 try:
                     _addAPICall([apiData, apiDataAggregated], routineStack[tid],
                         lineStack[tid], name, routine_name)
@@ -138,6 +176,11 @@ def _parseData(logcat, apiDataAggregated):
                     msg = msg.format(logcat, str(tid), str(routineStack),
                             str(lineStack), index+1)
                     print (msg)
+                except RuntimeError as re:
+                    msg = "Attempted to add API call {} on line {}\n"
+                    msg = msg.format(name, index+1)
+                    raise RuntimeError(re.__str__() + msg)
+                # print ("Popping %s from line stack" % lineStack[tid][-1:])
                 lineStack[tid].pop()
 
             elif line.find(' exiting ') >= 0:
@@ -163,7 +206,8 @@ def _parseData(logcat, apiDataAggregated):
                         print (msg)
                 else:
                     if tid in lineStack and len(lineStack[tid]) > 0:
-                        lineStack[tid].pop()
+                        _searchAndRemoveInLinestack(lineStack, tid,
+                            expectedName, routineStack)
                     routineStack[tid].pop()
                 if len(routineStack[tid]) > 0:
                     routine_name = routineStack[tid][-1]
