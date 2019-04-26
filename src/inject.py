@@ -257,7 +257,7 @@ def _injectMethodPrologue(source, output):
     # if 'subreddit/header/c.smali' in source.name:
         # logfile = open("injectlogfile.txt", "a")
         # logfile.write("injecting into method prologue of " + source.name + "\n")
-    param = {}
+    paramToTypes = {}
     paramSize = 0
     newReg = 0
     while True:
@@ -265,11 +265,11 @@ def _injectMethodPrologue(source, output):
         # if 'subreddit/header/c.smali' in source.name:
             # logfile.write(line)
         if line == '':
-            return newReg, remappedParam, parameterMap
+            return newReg, remappedParam, parameterMap, paramToTypes
         strip = line.strip()
         if strip.startswith('.method'):
-            param = _getParametersFromMethodSignature(line)
-            paramSize = _getParametersTotalSize(param)
+            paramToTypes = _getParametersFromMethodSignature(line)
+            paramSize = _getParametersTotalSize(paramToTypes)
         elif strip.startswith('.locals'):
             lineArray = line.split('.locals')
             newReg = int(lineArray[1])
@@ -284,7 +284,7 @@ def _injectMethodPrologue(source, output):
 
             # compute parameters map
             if remappedParam:
-                for key, value in sorted(param.iteritems()):
+                for key, value in sorted(paramToTypes.iteritems()):
                     # move two registers for 64bit types
                     parameterMap['p' + str(key)] = 'v' + str(newReg)
                     if value =='J' or value =='D':
@@ -303,7 +303,7 @@ def _injectMethodPrologue(source, output):
             _addMethodEnterLog(output)
             # move parameters
             if remappedParam:
-                for key, item in sorted(param.iteritems()):
+                for key, item in sorted(paramToTypes.iteritems()):
                     reg = 'p'+str(key)
                     mapping = parameterMap[reg]
                     # only doubles and longs use two
@@ -321,13 +321,13 @@ def _injectMethodPrologue(source, output):
                 output.write(_remapParameters(line, parameterMap))
             else:
                 output.write(line)
-            return newReg, remappedParam, parameterMap
+            return newReg, remappedParam, parameterMap, paramToTypes
 
         else:
             output.write(line)
 
 def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
-    appId, injectedMethods, methodsToParameters):
+    appId, injectedMethods, methodsToParameters, paramToTypes):
     """Inject the body of current method."""
     depth = 0
     apiCalls = [[]]
@@ -349,15 +349,22 @@ def _injectMethodBody(source, output, newReg, remappedParam, parameterMap,
             continue
 
         if remappedParam:
-            # if "listing/modqueue/d.smali" in source.name:
-                # print("This line is about to be remapped")
-                # print(line)
-                # print("ParamaterMap")
-                # print(parameterMap)
             line = _remapParameters(line, parameterMap)
-            # if "listing/modqueue/d.smali" in source.name:
-                # print("Line after remapping:")
-                # print(line)
+        elif not remappedParam:
+            pattern = "v{}( |,|}}|$)".format(newReg)
+            if re.search(re.compile(pattern), line) != None:
+                # Line uses the first parameter for something.
+                # Need to move the first parameter back into newReg before
+                # executing the line
+                moveLine = ""
+                if paramToTypes[0] == 'L' or '[' in paramToTypes[0]:
+                    moveLine = "    move-object/16 v{}, p0\n"
+                elif paramToTypes[0] == 'J' or paramToTypes[0] == 'D':
+                    moveLine = "    move-wide/16 v{}, p0\n"
+                else:
+                    moveLine = "    move/16 v{}, p0\n"
+                moveLine = moveLine.format(newReg)
+                output.write(moveLine)
 
         strip = line.strip()
         if strip.startswith(':goto'):
@@ -418,10 +425,11 @@ def _injectFile(path, injectedMethods, methodsToParameters):
         with open(path + outputExtension, 'w') as output:
             appId, className = _getPackageId(source)
             while _jumpToInjectedMethod(source, output, injectedMethods, className):
-                newReg, remappedParam, parameterMap = _injectMethodPrologue(source,
+                newReg, remappedParam, parameterMap, paramsToTypes = _injectMethodPrologue(source,
                     output)
                 _injectMethodBody(source, output, newReg, remappedParam,
-                    parameterMap, appId, injectedMethods, methodsToParameters)
+                    parameterMap, appId, injectedMethods, methodsToParameters,
+                    paramsToTypes)
             output.close()
         source.close()
     # overwrite the original file
