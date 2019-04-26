@@ -95,7 +95,7 @@ def _searchAndRemoveInStacks(routineStack, lineStack, tid, item):
         # print ("Routine stack:\n%s\n" % routineStack[tid])
         _searchAndRemoveInLinestack(lineStack, tid, item, routineStack)
         return True
-    except ValueError as ve:
+    except (KeyError, ValueError) as ve:
         return False
 
 # bwestfield - function that draws the APIs from logcat then compares to the list
@@ -209,7 +209,7 @@ def _parseData(logcat, apiDataAggregated):
                         _searchAndRemoveInLinestack(lineStack, tid,
                             expectedName, routineStack)
                     routineStack[tid].pop()
-                if len(routineStack[tid]) > 0:
+                if tid in routineStack and len(routineStack[tid]) > 0:
                     routine_name = routineStack[tid][-1]
 
     log.close()
