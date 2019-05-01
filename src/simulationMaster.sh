@@ -56,6 +56,7 @@ if [ "$USING_EMULATOR" = "true" ];
 else
         ADB_PREFIX="$ADB"
 fi
+echo "PORT: $6"
 echo "ADB_PREFIX: $ADB_PREFIX"
 
 # wait for the device to boot

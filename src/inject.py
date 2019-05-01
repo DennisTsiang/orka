@@ -174,7 +174,9 @@ def _jumpToInjectedMethod(source, output, injectedMethods, className):
         strip = line.strip()
         # if method declaration and not constructor and has API return True
         # and not an abstract method
+        # and not a native method
         if strip.startswith('.method') and 'abstract' not in strip \
+        and 'native' not in strip \
         and _getNameFromSig(strip, className) in injectedMethods:
             source.seek(prevLine)
             return True

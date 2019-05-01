@@ -108,7 +108,7 @@ def getPackageInfo(app):
 
     # Get activity name
     cmd = AAPT + " dump badging " + app
-    cmd += " | grep -oP \"(?<=launchable-activity: name=')\S+\""
+    cmd += " | grep -oP \"(?<=launchable-activity: name=')\S+\" | head -n 1"
 
     out = runProcess(cmd, getStdout = True)
     actName = out[:-2]
