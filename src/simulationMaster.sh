@@ -43,7 +43,10 @@ DEVICES=$($ADB devices | grep 'device\b' | grep -v 'emulator')
 # -wipe-data option reset user data on device
 if [ -z "$DEVICES" ];
     then
-        $ANDROID_HOME/tools/emulator -avd $AVD -port $PORT -no-boot-anim -no-snapshot-save -snapshot testsong &
+        DEVICES=$($ADB devices | grep emulator-$PORT)
+        if [ -z "$DEVICES" ]; then
+          $ANDROID_HOME/tools/emulator -avd $AVD -port $PORT -no-boot-anim -no-snapshot-save -snapshot testsong &
+        fi
         USING_EMULATOR="true"
 fi
 
@@ -95,6 +98,7 @@ for i in `seq 1 $NRUNS`;
         LOGCAT=$RUNDIR/logcat.txt
         BATTERYSTATS=$RUNDIR/batterystats.txt
         NETSTATS=$RUNDIR/netstats.txt
+        RUNTIMETXT=$RUNDIR/runtime.txt
         echo "NETSTATS: $NETSTATS"
 
         # reset logcat
@@ -124,7 +128,11 @@ for i in `seq 1 $NRUNS`;
 
         #run script command
         echo $SCRIPT_CMD
+        START=`date +%s`
         $SCRIPT_CMD
+        END=`date +%s`
+        RUNTIME=$((END-START))
+        echo $RUNTIME > $RUNTIMETXT
 
         # wait for execution to fully terminate
         sleep 4
@@ -139,7 +147,7 @@ for i in `seq 1 $NRUNS`;
         # generate statement coverage report
         if [ -n "$PICKLE" ]; then
           acv stop $PACKAGE_NAME -d $EMULATOR_SERIAL -t 10
-          acv report -p $PICKLE -o $OUTDIR -html -o $OUTDIR $PACKAGE_NAME
+          acv report -p $PICKLE -o $OUTDIR -html $PACKAGE_NAME
         fi
 
         # stop app and clear app data
