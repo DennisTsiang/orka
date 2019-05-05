@@ -17,6 +17,7 @@ import argparse
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import distutils.spawn
+import profiles
 
 # Const
 ORKAHOME = os.environ['ORKA_HOME']
@@ -66,9 +67,9 @@ parser.add_argument('--pickle', dest='pickle',
                     default="",
                     help='use this option to set the pickle location for' \
                     'ACVTool')
-parser.add_argument('--delay', dest='delay',
+parser.add_argument('--category', dest='category',
                     default="1000",
-                    help='use this option to set the delay between button presses' \
+                    help='use this option to set the options' \
                     'for DroidMate-2')
 
 def getPackageInfo(app):
@@ -217,8 +218,8 @@ def main(args):
                 scriptCmd = ("java -jar vendor/orka/dependencies/DM-2.jar "+
                     "--Exploration-apksDir=" +
                     outputDir + "/dist --Output-outputDir=" + resultsDir
-                    + "/droidmate" + " --Selectors-actionLimit=5"
-                    + " --Exploration-widgetActionDelay="+args.delay)
+                    + "/droidmate ")
+                scriptCmd += ' '.join(profiles.appendTestProfile(args.category))
             else:
                 scriptCmd = ' '.join([ORKASDK+"/tools/bin/monkeyrunner",
                     monkey, compName, monkeyInput, args.port])
