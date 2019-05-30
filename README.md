@@ -1,15 +1,21 @@
 ## Synopsis
+* This is an modified version of the original Orka that has been extended to work with the Aeon tool. It is not guaranteed to work as a standalone
+  program anymore.
 * Orka is a light-weigth energy profiling tool for Android applications, providing method and source-line level feeback to developpers about the energy usage of their code.
-* Orka first injects the tested application and simulates a typical use case by running a monkeyrunner script provided by the user.
+* Orka first injects the tested application and simulates a typical use case by either running a monkeyrunner script provided by the user or using DroidMate-2.
 
 
 ## Installation
 * Before running Orka, the Android SDK, Python and Java need to be installed
 on the machine.
-* Two paths need to be exported:
+* The following paths need to be exported:
     * $ORKA_HOME -- the path to the installation directory of Orka,
     * $ANDROID_HOME -- the path to the Android SDK.
+    * $ANDROID_TOOLS -- the path to the bin directory of the Android SDK.
+    * JAVA_HOME -- the path to the Java installation.
+* Example paths can be seen in paths.sh
 * Orka can be ran on either an actual or a virtual device, running in the Android emulator. If using the emulator, the AVD to be tested needs to first be created in the AVD Manager, using x86 architecture.
+* Orka should be installed into the vendor directory of Aeon's backend repository.
 
 
 ## Execution
