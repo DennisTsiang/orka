@@ -45,6 +45,8 @@ if [ ${#find_paths[@]} -eq 0 ]; then
   exit 2
 fi
 
+
+START=`date +%s`
 # add logger smali file
 cp $LOGGER $OUTDIR/${smali_folders[0]}/$PDIR/Logger.smali
 
@@ -68,3 +70,7 @@ java -jar $APKTOOL b $OUTDIR/ -o $ORKA_APK
 # sign application
 echo jarsigner -keystore $KEYSTORE $ORKA_APK androiddebugkey -storepass android
 jarsigner -keystore $KEYSTORE $ORKA_APK androiddebugkey -storepass android
+
+END=`date +%s`
+RUNTIME=$((END-START))
+echo "Injection time taken: $RUNTIME"

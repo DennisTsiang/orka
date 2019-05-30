@@ -17,7 +17,8 @@ AVD=$3
 SCRIPT_CMD=$4
 NRUNS=$5
 PORT=$6
-PICKLE=$7
+METHOD=$7
+PICKLE=$8
 
 ADB=$ANDROID_HOME/platform-tools/adb
 
@@ -56,6 +57,10 @@ if [ "$USING_EMULATOR" = "true" ];
     then
         EMULATOR_SERIAL="emulator-$PORT"
         ADB_PREFIX="$ADB -s emulator-$PORT"
+        if [ "$METHOD" = "Monkeyrunner" ];
+          then
+            SCRIPT_CMD="$SCRIPT_CMD $PORT"
+        fi
 else
         ADB_PREFIX="$ADB"
 fi

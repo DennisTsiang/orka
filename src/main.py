@@ -160,10 +160,10 @@ def _instrument(app, packName, packDir):
     return os.path.exists(pathApiFound)
 
 def _runSimulation(pathOrkaApk, packName, avd, scriptCmd,
-    nRuns, port, pickle):
+    nRuns, port, method, pickle):
     """Runs a command on an injected apk."""
     cmd = [ORKAHOME + "/src/simulationMaster.sh ", pathOrkaApk, packName, avd,
-        scriptCmd, nRuns, port, pickle]
+        scriptCmd, nRuns, port, method, pickle]
     cmd = ' '.join(cmd)
     runProcess(cmd)
 
@@ -222,11 +222,11 @@ def main(args):
                 scriptCmd += ' '.join(profiles.appendTestProfile(args.category))
             else:
                 scriptCmd = ' '.join([ORKASDK+"/tools/bin/monkeyrunner",
-                    monkey, compName, monkeyInput, args.port])
+                    monkey, compName, monkeyInput])
             scriptCmd = "\'" + scriptCmd + "\'"
             print ("Running simulation with command: " + scriptCmd)
             _runSimulation(pathOrkaApk, packName, emul, scriptCmd, nRuns,
-                args.port, args.pickle)
+                args.port, args.method, args.pickle)
 
         # render results
         if not args.skipAn:

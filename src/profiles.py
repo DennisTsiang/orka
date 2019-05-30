@@ -1,6 +1,6 @@
 def appendTestProfile(category):
     parameters = []
-    if category == "Reddit Browsers":
+    if category == "Reddit Browsers" or "Web Browsers":
         parameters.extend(["--Exploration-widgetActionDelay=100",
             "--Selectors-timeLimit=300000", "--Selectors-actionLimit=500"])
     else:
